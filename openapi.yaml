@@ -1,0 +1,53 @@
+# Generated with protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
+
+openapi: 3.0.3
+info:
+    title: ""
+    version: 0.0.1
+paths:
+    /api/v1alpha1/cluster/ping:
+        get:
+            tags:
+                - ClusterInterface
+            operationId: ClusterInterface_Ping
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/cluster.v1alpha1.Msg'
+    /api/v1alpha1/system/ping:
+        get:
+            tags:
+                - SystemInterface
+            operationId: SystemInterface_Ping
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/system.v1alpha1.Msg'
+components:
+    schemas:
+        cluster.v1alpha1.Msg:
+            type: object
+            properties:
+                Reason:
+                    type: integer
+                    format: enum
+                Message:
+                    type: string
+        system.v1alpha1.Msg:
+            type: object
+            properties:
+                Reason:
+                    type: integer
+                    format: enum
+                Message:
+                    type: string
+tags:
+    - name: ClusterInterface
+    - name: SystemInterface

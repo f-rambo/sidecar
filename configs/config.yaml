@@ -1,0 +1,17 @@
+server:
+  name: "ship"
+  version: 0.0.1
+  http:
+    network: "tcp"
+    addr: 0.0.0.0:8000
+    timeout: 1
+  grpc:
+    network: "tcp"
+    addr: 0.0.0.0:9000
+    timeout: 1
+log:
+  max_size: 500
+  max_backups: 3
+  max_age: 28
+  compress: true
+  local_time: true
