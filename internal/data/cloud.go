@@ -5,13 +5,13 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 )
 
-type clusterRepo struct {
+type cloudRepo struct {
 	data *Data
 	log  *log.Helper
 }
 
-func NewClusterRepo(data *Data, logger log.Logger) biz.ClusterRepo {
-	return &clusterRepo{
+func NewCloudRepo(data *Data, logger log.Logger) biz.CloudRepo {
+	return &cloudRepo{
 		data: data,
 		log:  log.NewHelper(logger),
 	}

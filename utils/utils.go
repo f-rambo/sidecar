@@ -151,3 +151,13 @@ func getRandomTimeString() string {
 	timePart := time.Now().Format("20060102150405") // Get the current time in the format YYYYMMDDHHMMSS
 	return fmt.Sprintf("%s%d", timePart, randPart)
 }
+
+// check array contains
+func ArrayContains(arr []string, str string) bool {
+	for _, a := range arr {
+		if a == str {
+			return true
+		}
+	}
+	return false
+}

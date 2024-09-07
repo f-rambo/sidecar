@@ -68,6 +68,16 @@ docker-stop:
 docker-push:
 	docker push $(IMG)
 
+.PHONY: docker-dev-build
+# docker-dev-build
+docker-dev-build:
+	docker build -f Dockerfile_dev -t unbuntu-with-sshandgo $HOME
+
+.PHONY: docker-dev
+# docker-dev
+docker-dev:
+	docker run -it -d --rm --name unbuntu-with-sshandgo -p 2222:22 -p 8000:8000 -p 9000:9000 -v ./:/go/src/ship unbuntu-with-sshandgo
+
 .PHONY: run
 # run
 run:

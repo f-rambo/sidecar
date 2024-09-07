@@ -17,6 +17,7 @@ import (
 )
 
 import (
+	_ "github.com/joho/godotenv/autoload"
 	_ "go.uber.org/automaxprocs"
 )
 
@@ -31,11 +32,11 @@ func wireApp(confServer *conf.Server, logger log.Logger) (*kratos.App, func(), e
 	systemRepo := data.NewSystemRepo(dataData, logger)
 	systemUsecase := biz.NewSystemUseCase(systemRepo, logger)
 	systemInterface := interfaces.NewSystemInterface(systemUsecase, logger)
-	clusterRepo := data.NewClusterRepo(dataData, logger)
-	clusterUsecase := biz.NewClusterUseCase(clusterRepo, logger)
-	clusterInterface := interfaces.NewClusterInterface(clusterUsecase, logger)
-	grpcServer := server.NewGRPCServer(confServer, systemInterface, clusterInterface, logger)
-	httpServer := server.NewHTTPServer(confServer, systemInterface, clusterInterface, logger)
+	cloudRepo := data.NewCloudRepo(dataData, logger)
+	cloudUsecase := biz.NewCloudUseCase(cloudRepo, logger)
+	cloudInterface := interfaces.NewCloudInterface(cloudUsecase, logger)
+	grpcServer := server.NewGRPCServer(confServer, systemInterface, cloudInterface, logger)
+	httpServer := server.NewHTTPServer(confServer, systemInterface, cloudInterface, logger)
 	app := newApp(logger, grpcServer, httpServer)
 	return app, func() {
 		cleanup()

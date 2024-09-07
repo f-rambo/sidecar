@@ -25,3 +25,25 @@ func NewSystemInterface(systemUc *biz.SystemUsecase, logger log.Logger) *SystemI
 func (c *SystemInterface) Ping(ctx context.Context, _ *emptypb.Empty) (*v1alpha1.Msg, error) {
 	return &v1alpha1.Msg{Message: "pong"}, nil
 }
+
+func (c *SystemInterface) GetSystem(ctx context.Context, _ *emptypb.Empty) (*v1alpha1.System, error) {
+	system, err := c.systemUc.GetSystem(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &v1alpha1.System{
+		Id:         system.ID,
+		Os:         system.OS,
+		Arch:       system.ARCH,
+		Cpu:        system.CPU,
+		Memory:     system.Memory,
+		Gpu:        system.GPU,
+		GpuSpec:    system.GpuSpec,
+		DataDisk:   system.DataDisk,
+		Kernel:     system.Kernel,
+		Container:  system.Container,
+		Kubelet:    system.Kubelet,
+		KubeProxy:  system.KubeProxy,
+		InternalIp: system.InternalIP,
+	}, nil
+}
