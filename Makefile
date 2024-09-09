@@ -71,12 +71,12 @@ docker-push:
 .PHONY: docker-dev-build
 # docker-dev-build
 docker-dev-build:
-	docker build -f Dockerfile_dev -t unbuntu-with-sshandgo $HOME
+	docker build -f Dockerfile_dev -t ship-dev .
 
 .PHONY: docker-dev
 # docker-dev
 docker-dev:
-	docker run -it -d --rm --name unbuntu-with-sshandgo -p 2222:22 -p 8000:8000 -p 9000:9000 -v ./:/go/src/ship unbuntu-with-sshandgo
+	docker run -it -d --rm --name ship-dev -p 8001:8001 -p 9001:9001 -v ./:/go/src/ship ship-dev
 
 .PHONY: run
 # run

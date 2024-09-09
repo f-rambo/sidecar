@@ -3,11 +3,11 @@ server:
   version: 0.0.1
   http:
     network: "tcp"
-    addr: 0.0.0.0:8000
+    addr: 0.0.0.0:8001
     timeout: 1
   grpc:
     network: "tcp"
-    addr: 0.0.0.0:9000
+    addr: 0.0.0.0:9001
     timeout: 1
 log:
   max_size: 500

@@ -8,8 +8,8 @@ package biz
 import "C"
 
 import (
+	"bufio"
 	"context"
-	"fmt"
 	"math"
 	n "net"
 	"os/exec"
@@ -76,30 +76,42 @@ func (s *SystemUsecase) GetSystem(ctx context.Context) (*System, error) {
 	if err != nil {
 		return nil, err
 	}
+	// check current user is root
+	output, err := exec.Command("whoami").CombinedOutput()
+	if err != nil {
+		return nil, errors.Wrap(err, string(output))
+	}
+	if strings.TrimSpace(string(output)) != "root" {
+		// swtich to root user
+		output, err = exec.Command("sudo", "-i").CombinedOutput()
+		if err != nil {
+			return nil, errors.Wrap(err, string(output))
+		}
+	}
 	// get mac address
-	output, err := exec.Command("sudo", "dmidecode", "-s", "system-uuid").CombinedOutput()
+	output, err = exec.Command("dmidecode", "-s", "system-uuid").CombinedOutput()
 	if err != nil {
 		return nil, errors.Wrap(err, string(output))
 	}
 	system.MachineID = strings.TrimSpace(string(output))
 	// get system info
-	output, err = exec.Command("sudo", "uname", "-a").CombinedOutput()
+	output, err = exec.Command("uname", "-a").CombinedOutput()
 	if err != nil {
 		return nil, errors.Wrap(err, string(output))
 	}
 	system.Kernel = strings.TrimSpace(string(output))
 	// get system os
-	output, err = exec.Command("sudo", "cat", "/etc/os-release").CombinedOutput()
+	output, err = exec.Command("cat", "/etc/os-release").CombinedOutput()
 	if err != nil {
 		return nil, errors.Wrap(err, string(output))
 	}
 	system.OSInfo = strings.TrimSpace(string(output))
-	output, err = exec.Command("sudo", "uname", "-s").CombinedOutput()
+	output, err = exec.Command("uname", "-s").CombinedOutput()
 	if err != nil {
 		return nil, errors.Wrap(err, string(output))
 	}
 	system.OS = strings.TrimSpace(string(output))
-	output, err = exec.Command("sudo", "uname", "-i").CombinedOutput()
+	output, err = exec.Command("uname", "-m").CombinedOutput()
 	if err != nil {
 		return nil, errors.Wrap(err, string(output))
 	}
@@ -124,7 +136,7 @@ func (s *SystemUsecase) GetSystem(ctx context.Context) (*System, error) {
 	if err != nil {
 		return nil, err
 	}
-	output, err = exec.Command("sudo", "lspci").CombinedOutput()
+	output, err = exec.Command("lspci").CombinedOutput()
 	if err != nil {
 		return nil, errors.Wrap(err, string(output))
 	}
@@ -174,56 +186,73 @@ func (s *SystemUsecase) GetSystem(ctx context.Context) (*System, error) {
 func (s *SystemUsecase) installSoftware(softwares ...string) error {
 	// check linux version /etc/debian_version || /etc/redhat-release
 	ok := utils.IsFileExist("/etc/debian_version")
-	var output []byte
-	var err error
 	if ok {
+		s.log.Info("debian")
 		// check if software is already downloaded
 		for _, software := range softwares {
-			output, err = exec.Command("apt-cache", "policy", software).CombinedOutput()
+			output, err := exec.Command("apt-cache", "policy", software).CombinedOutput()
 			if err != nil {
 				return errors.Wrap(err, string(output))
 			}
-			if !strings.Contains(string(output), "Installed: (none)") {
-				fmt.Println("software already downloaded", software)
+			if !strings.Contains(string(output), "Installed: (none)") && string(output) != "" {
+				s.log.Info("software already downloaded", software)
 				continue
 			}
 			// update apt-get
-			output, err = exec.Command("sudo", "apt", "update").CombinedOutput()
-			if err != nil {
-				return errors.Wrap(err, string(output))
+			if err := s.runCommandWithLogging("apt", "update"); err != nil {
+				return err
 			}
 			// install software
-			output, err = exec.Command("sudo", "apt", "install", "-y", software).CombinedOutput()
-			if err != nil {
-				return errors.Wrap(err, string(output))
+			if err := s.runCommandWithLogging("apt", "install", "-y", software); err != nil {
+				return err
 			}
 		}
 		return nil
 	}
 	ok = utils.IsFileExist("/etc/redhat-release")
 	if ok {
+		s.log.Info("redhat")
 		// check if software is already downloaded
 		for _, software := range softwares {
-			output, err = exec.Command("yum", "list", "installed", software).CombinedOutput()
+			output, err := exec.Command("yum", "list", "installed", software).CombinedOutput()
 			if err != nil {
 				return errors.Wrap(err, string(output))
 			}
-			if strings.Contains(string(output), "Installed Packages") {
-				fmt.Println("software already downloaded", software)
+			if !strings.Contains(string(output), "Installed Packages") && string(output) != "" {
+				s.log.Info("software already downloaded", software)
 				continue
 			}
 			// update yum
-			output, err = exec.Command("sudo", "yum", "update").CombinedOutput()
-			if err != nil {
-				return errors.Wrap(err, string(output))
+			if err := s.runCommandWithLogging("sudo", "yum", "update"); err != nil {
+				return err
 			}
 			// install software
-			output, err = exec.Command("sudo", "yum", "install", "-y", software).CombinedOutput()
-			if err != nil {
-				return errors.Wrap(err, string(output))
+			if err := s.runCommandWithLogging("sudo", "yum", "install", "-y", software); err != nil {
+				return err
 			}
 		}
 		return nil
 	}
 	return errors.New("not support system")
+}
+
+func (s *SystemUsecase) runCommandWithLogging(command string, args ...string) error {
+	cmd := exec.Command(command, args...)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return errors.Wrap(err, "failed to get stdout pipe")
+	}
+	if err := cmd.Start(); err != nil {
+		return errors.Wrap(err, "failed to start command")
+	}
+	go func() {
+		scanner := bufio.NewScanner(stdout)
+		for scanner.Scan() {
+			s.log.Info(scanner.Text())
+		}
+	}()
+	if err := cmd.Wait(); err != nil {
+		return errors.Wrap(err, "command failed")
+	}
+	return nil
 }

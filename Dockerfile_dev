@@ -1,39 +1,22 @@
-FROM ubuntu:latest
-
-RUN apt-get update && apt-get install -y openssh-server gcc make musl-dev curl vim sudo
-
-RUN mkdir /var/run/sshd
-
-RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-
-RUN sed -i 's@session    required   pam_loginuid.so@session    optional   pam_loginuid.so@g' /etc/pam.d/sshd
-
-COPY ./.ssh/id_rsa.pub  /root/.ssh/authorized_keys
-
-RUN chmod 600 /root/.ssh/authorized_keys
-
-# Install Go
-RUN curl -OL https://go.dev/dl/go1.22.6.linux-arm64.tar.gz && \
-      tar -C /usr/local -xzf go1.22.6.linux-arm64.tar.gz && \
-      rm go1.22.6.linux-arm64.tar.gz
+FROM golang:1.22
 
 # Set Go environment variables
-RUN echo 'export GOPATH="/go"' >> /root/.bashrc && \
-      echo 'export GOBIN="/go/bin"' >> /root/.bashrc && \
-      echo 'export PATH="/usr/local/go/bin:${GOBIN}:${PATH}"' >> /root/.bashrc && \
-      echo 'export GO111MODULE=on' >> /root/.bashrc && \
-      echo 'export GOPROXY=https://goproxy.cn' >> /root/.bashrc && \
-      echo 'export GOPRIVATE=github.com/f-rambo/' >> /root/.bashrc && \
-      echo 'export CGO_ENABLED=1' >> /root/.bashrc && \
-      echo 'export GOOS=linux' >> /root/.bashrc && \
-      echo 'export GOARCH=arm64' >> /root/.bashrc
+ENV GOPATH="/go"
+ENV GOBIN="/go/bin"
+ENV GO111MODULE=on
+ENV GOPROXY=https://goproxy.cn
+ENV GOPRIVATE=github.com/f-rambo/
+ENV CGO_ENABLED=1
 
+# Create necessary directories
 RUN mkdir -p /go/bin /go/src /go/pkg
 
-EXPOSE 22
-EXPOSE 8000
-EXPOSE 9000
+# Expose ports
+EXPOSE 8001
+EXPOSE 9001
 
+# Set volume
 VOLUME [ "/go/src" ]
 
-CMD ["/usr/sbin/sshd", "-D"]
+# Set the default command
+CMD ["/bin/bash"]
