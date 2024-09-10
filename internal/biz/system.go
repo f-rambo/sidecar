@@ -10,6 +10,8 @@ import "C"
 import (
 	"bufio"
 	"context"
+	"fmt"
+	"io"
 	"math"
 	n "net"
 	"os/exec"
@@ -237,16 +239,21 @@ func (s *SystemUsecase) installSoftware(softwares ...string) error {
 }
 
 func (s *SystemUsecase) runCommandWithLogging(command string, args ...string) error {
+	s.log.Info("exec command: ", fmt.Sprintf("%s %s", command, strings.Join(args, " ")))
 	cmd := exec.Command(command, args...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return errors.Wrap(err, "failed to get stdout pipe")
 	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return errors.Wrap(err, "failed to get stderr pipe")
+	}
 	if err := cmd.Start(); err != nil {
 		return errors.Wrap(err, "failed to start command")
 	}
 	go func() {
-		scanner := bufio.NewScanner(stdout)
+		scanner := bufio.NewScanner(io.MultiReader(stdout, stderr))
 		for scanner.Scan() {
 			s.log.Info(scanner.Text())
 		}
@@ -255,4 +262,14 @@ func (s *SystemUsecase) runCommandWithLogging(command string, args ...string) er
 		return errors.Wrap(err, "command failed")
 	}
 	return nil
+}
+
+// exec command
+func (s *SystemUsecase) execCommand(command string, args ...string) (output string, err error) {
+	s.log.Info("exec command: ", fmt.Sprintf("%s %s", command, strings.Join(args, " ")))
+	outputBytes, err := exec.Command(command, args...).CombinedOutput()
+	if err != nil {
+		return "", errors.Wrap(err, string(outputBytes))
+	}
+	return string(outputBytes), err
 }

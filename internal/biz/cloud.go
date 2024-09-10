@@ -13,13 +13,20 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"strings"
 
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/pkg/errors"
 )
 
 type Cloud struct {
 	ID                       int64  `json:"id" gorm:"column:id;primaryKey;AUTO_INCREMENT"`
+	KubeProxyConfig          string `json:"kube_proxy_config" gorm:"column:kube_proxy_config"`
+	KubeletConfig            string `json:"kubelet_config" gorm:"column:kubelet_config"`
+	KubeadmInitClusterConfig string `json:"kubeadm_init_cluster_config" gorm:"column:kubeadm_init_cluster_config"`
 	KubeadmInitConfig        string `json:"kubeadm_init_config" gorm:"column:kubeadm_init_config"`
+	KubeadmResetConfig       string `json:"kubeadm_reset_config" gorm:"column:kubeadm_reset_config"`
+	KubeadmUpgradeConfig     string `json:"kubeadm_upgrade_config" gorm:"column:kubeadm_upgrade_config"`
 	KubeadmConfig            string `json:"kubeadm_config" gorm:"column:kubeadm_config"`
 	KubeletService           string `json:"kubelet_service" gorm:"column:kubelet_service"`
 	CRIOVersion              string `json:"crio_version" gorm:"column:crio_version"`
@@ -49,43 +56,43 @@ func NewCloudUseCase(cloudRepo CloudRepo, logger log.Logger) *CloudUsecase {
 func (uc *CloudUsecase) InstallKubeadmKubeletCriO(ctx context.Context, cloud *Cloud) error {
 	crioFilePath := fmt.Sprintf("/tmp/crio.%s.v%s.tar.gz", cloud.ARCH, cloud.CRIOVersion)
 	uc.log.WithContext(ctx).Info("install crio......")
-	output, err := exec.Command("sudo", "tar", "-zxvf", crioFilePath, "-C", "$HOME/crio").CombinedOutput()
+	output, err := uc.execCommand("sudo", "tar", "-zxvf", crioFilePath, "-C", "$HOME/crio")
 	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to install crio: %v, output: %s", err, string(output))
+		uc.log.WithContext(ctx).Errorf("failed to install crio: %v, output: %s", err, output)
 		return err
 	}
-	output, err = exec.Command("sudo", "chmod", "+x", "$HOME/crio/install").CombinedOutput()
+	output, err = uc.execCommand("sudo", "chmod", "+x", "$HOME/crio/install")
 	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to chmod crio: %v, output: %s", err, string(output))
+		uc.log.WithContext(ctx).Errorf("failed to chmod crio: %v, output: %s", err, output)
 		return err
 	}
 	uc.log.WithContext(ctx).Info("chmod crio success")
-	output, err = exec.Command("sudo", "bash", "$HOME/crio/install").CombinedOutput()
+	output, err = uc.execCommand("sudo", "bash", "$HOME/crio/install")
 	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to install crio: %v, output: %s", err, string(output))
+		uc.log.WithContext(ctx).Errorf("failed to install crio: %v, output: %s", err, output)
 		return err
 	}
 	uc.log.WithContext(ctx).Info("install crio success......")
-	output, err = exec.Command("sudo", "mv", "/tmp/kubeadm", "/usr/local/bin/kubeadm").CombinedOutput()
+	output, err = uc.execCommand("sudo", "mv", "/tmp/kubeadm", "/usr/local/bin/kubeadm")
 	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to move kubeadm: %v, output: %s", err, string(output))
+		uc.log.WithContext(ctx).Errorf("failed to move kubeadm: %v, output: %s", err, output)
 		return err
 	}
-	output, err = exec.Command("sudo", "chmod", "+x", "/usr/local/bin/kubeadm").CombinedOutput()
+	output, err = uc.execCommand("sudo", "chmod", "+x", "/usr/local/bin/kubeadm")
 	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to chmod kubeadm: %v, output: %s", err, string(output))
+		uc.log.WithContext(ctx).Errorf("failed to chmod kubeadm: %v, output: %s", err, output)
 		return err
 	}
 	uc.log.WithContext(ctx).Info("chmod kubeadm success")
-	output, err = exec.Command("sudo", "mv", "/tmp/kubelet", "/usr/local/bin/kubelet").CombinedOutput()
+	output, err = uc.execCommand("sudo", "mv", "/tmp/kubelet", "/usr/local/bin/kubelet")
 	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to move kubelet: %v, output: %s", err, string(output))
+		uc.log.WithContext(ctx).Errorf("failed to move kubelet: %v, output: %s", err, output)
 		return err
 	}
 	uc.log.WithContext(ctx).Info("move kubelet success")
-	output, err = exec.Command("sudo", "chmod", "+x", "/usr/local/bin/kubelet").CombinedOutput()
+	output, err = uc.execCommand("sudo", "chmod", "+x", "/usr/local/bin/kubelet")
 	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to chmod kubelet: %v, output: %s", err, string(output))
+		uc.log.WithContext(ctx).Errorf("failed to chmod kubelet: %v, output: %s", err, output)
 		return err
 	}
 	uc.log.WithContext(ctx).Info("chmod kubelet success")
@@ -95,113 +102,49 @@ func (uc *CloudUsecase) InstallKubeadmKubeletCriO(ctx context.Context, cloud *Cl
 // add kubelet service and seting kubeadm config
 func (uc *CloudUsecase) AddKubeletServiceAndSettingKubeadmConfig(ctx context.Context, cloud *Cloud) error {
 	uc.log.WithContext(ctx).Info("add kubelet service and setting kubeadm config")
-	output, err := exec.Command("echo", cloud.KubeadmConfig, "|", "sed", "s:/usr/bin:/usr/local/bin:g", "|", "sudo", "tee", "/usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf").CombinedOutput()
+	output, err := uc.execCommand("echo", cloud.KubeadmConfig, "|", "sed", "s:/usr/bin:/usr/local/bin:g", "|", "sudo", "tee", "/usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf")
 	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to add kubelet service and setting kubeadm config: %v, output: %s", err, string(output))
+		uc.log.WithContext(ctx).Errorf("failed to add kubelet service and setting kubeadm config: %v, output: %s", err, output)
 		return err
 	}
 	uc.log.WithContext(ctx).Info("add kubelet service and setting kubeadm config success")
-	output, err = exec.Command("echo", cloud.KubeletService, "|", "sed", "s:/usr/bin:/usr/local/bin:g", "|", "sudo", "tee", "/usr/lib/systemd/system/kubelet.service").CombinedOutput()
+	output, err = uc.execCommand("echo", cloud.KubeletService, "|", "sed", "s:/usr/bin:/usr/local/bin:g", "|", "sudo", "tee", "/usr/lib/systemd/system/kubelet.service")
 	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to add kubelet service: %v, output: %s", err, string(output))
+		uc.log.WithContext(ctx).Errorf("failed to add kubelet service: %v, output: %s", err, output)
 		return err
 	}
 	uc.log.WithContext(ctx).Info("add kubelet service success")
-	output, err = exec.Command("sudo", "systemctl", "daemon-reload").CombinedOutput()
+	output, err = uc.execCommand("sudo", "systemctl", "daemon-reload")
 	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to reload daemon: %v, output: %s", err, string(output))
+		uc.log.WithContext(ctx).Errorf("failed to reload daemon: %v, output: %s", err, output)
 		return err
 	}
 	uc.log.WithContext(ctx).Info("reload daemon success")
-	output, err = exec.Command("sudo", "systemctl", "enable", "--now", "kubelet").CombinedOutput()
+	output, err = uc.execCommand("sudo", "systemctl", "enable", "--now", "kubelet")
 	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to enable kubelet: %v, output: %s", err, string(output))
+		uc.log.WithContext(ctx).Errorf("failed to enable kubelet: %v, output: %s", err, output)
 		return err
 	}
 	uc.log.WithContext(ctx).Info("enable kubelet success")
-	output, err = exec.Command("sudo", "systemctl", "status", "kubelet").CombinedOutput()
+	output, err = uc.execCommand("sudo", "systemctl", "status", "kubelet")
 	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to get kubelet status: %v, output: %s", err, string(output))
+		uc.log.WithContext(ctx).Errorf("failed to get kubelet status: %v, output: %s", err, output)
 		return err
 	}
 	uc.log.WithContext(ctx).Info("get kubelet status success")
 	return nil
 }
 
-func (uc *CloudUsecase) JoinKubeadmWithJoinCommand(ctx context.Context, cloud *Cloud) error {
-	uc.log.WithContext(ctx).Info("joining node to Kubernetes cluster...")
-
-	joinCommand := fmt.Sprintf("sudo kubeadm join %s --token %s --discovery-token-ca-cert-hash %s", cloud.ControlPlaneEndpoint, cloud.Token, cloud.DiscoveryTokenCACertHash)
-	cmd := exec.Command("bash", "-c", joinCommand)
-
-	// Create pipes for stdout and stderr
-	stdoutPipe, err := cmd.StdoutPipe()
-	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to create stdout pipe: %v", err)
-		return err
-	}
-	stderrPipe, err := cmd.StderrPipe()
-	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to create stderr pipe: %v", err)
-		return err
-	}
-
-	// Start the command
-	if err := cmd.Start(); err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to start command: %v", err)
-		return err
-	}
-
-	// Create a scanner to read the output line by line
-	scanner := bufio.NewScanner(io.MultiReader(stdoutPipe, stderrPipe))
-	for scanner.Scan() {
-		line := scanner.Text()
-		uc.log.WithContext(ctx).Info(line)
-	}
-
-	// Wait for the command to finish
-	if err := cmd.Wait(); err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to join node to Kubernetes cluster: %v", err)
-		return err
-	}
-
-	uc.log.WithContext(ctx).Info("node joined to Kubernetes cluster successfully")
-	return nil
-}
-
-func (uc *CloudUsecase) JoinKubeadmWithJoinConfigFile(ctx context.Context, cloud *Cloud) error {
+func (uc *CloudUsecase) KubeadmJoin(ctx context.Context, cloud *Cloud) error {
 	uc.log.WithContext(ctx).Info("joining node to Kubernetes cluster using join config file...")
 
-	joinCommand := fmt.Sprintf("sudo kubeadm join --config %s", cloud.JoinConfig)
-	cmd := exec.Command("bash", "-c", joinCommand)
+	joinCommand := fmt.Sprintf("sudo kubeadm join %s --token %s --discovery-token-ca-cert-hash %s", cloud.ControlPlaneEndpoint, cloud.Token, cloud.DiscoveryTokenCACertHash)
+	if cloud.JoinConfig != "" {
+		joinCommand = fmt.Sprintf("sudo kubeadm join --config %s", cloud.JoinConfig)
+	}
 
-	// Create pipes for stdout and stderr
-	stdoutPipe, err := cmd.StdoutPipe()
+	err := uc.runCommandWithLogging("bash", "-c", joinCommand)
 	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to create stdout pipe: %v", err)
-		return err
-	}
-	stderrPipe, err := cmd.StderrPipe()
-	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to create stderr pipe: %v", err)
-		return err
-	}
-
-	// Start the command
-	if err := cmd.Start(); err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to start command: %v", err)
-		return err
-	}
-
-	// Create a scanner to read the output line by line
-	scanner := bufio.NewScanner(io.MultiReader(stdoutPipe, stderrPipe))
-	for scanner.Scan() {
-		line := scanner.Text()
-		uc.log.WithContext(ctx).Info(line)
-	}
-
-	// Wait for the command to finish
-	if err := cmd.Wait(); err != nil {
 		uc.log.WithContext(ctx).Errorf("failed to join node to Kubernetes cluster: %v", err)
 		return err
 	}
@@ -210,38 +153,16 @@ func (uc *CloudUsecase) JoinKubeadmWithJoinConfigFile(ctx context.Context, cloud
 	return nil
 }
 
-func (uc *CloudUsecase) InitKubeadm(ctx context.Context, cloud *Cloud) error {
+func (uc *CloudUsecase) KubeadmInit(ctx context.Context, cloud *Cloud) error {
 	uc.log.WithContext(ctx).Info("initializing Kubernetes cluster...")
 
 	initCommand := fmt.Sprintf("sudo kubeadm init --config %s", cloud.KubeadmInitConfig)
-	cmd := exec.Command("bash", "-c", initCommand)
+	if cloud.KubeadmInitClusterConfig != "" {
+		initCommand = fmt.Sprintf("sudo kubeadm init --config %s --upload-config %s", cloud.KubeadmInitConfig, cloud.KubeadmInitClusterConfig)
+	}
 
-	// Create a pipe for the command's stdout and stderr
-	stdoutPipe, err := cmd.StdoutPipe()
+	err := uc.runCommandWithLogging("bash", "-c", initCommand)
 	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to create stdout pipe: %v", err)
-		return err
-	}
-	stderrPipe, err := cmd.StderrPipe()
-	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to create stderr pipe: %v", err)
-		return err
-	}
-
-	// Start the command
-	if err := cmd.Start(); err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to start command: %v", err)
-		return err
-	}
-
-	// Create a scanner to read the output line by line
-	scanner := bufio.NewScanner(io.MultiReader(stdoutPipe, stderrPipe))
-	for scanner.Scan() {
-		uc.log.WithContext(ctx).Info(scanner.Text())
-	}
-
-	// Wait for the command to finish
-	if err := cmd.Wait(); err != nil {
 		uc.log.WithContext(ctx).Errorf("failed to initialize Kubernetes cluster: %v", err)
 		return err
 	}
@@ -250,12 +171,48 @@ func (uc *CloudUsecase) InitKubeadm(ctx context.Context, cloud *Cloud) error {
 	return nil
 }
 
+// kubeadm reset
+func (uc *CloudUsecase) KubeadmReset(ctx context.Context, cloud *Cloud) error {
+	uc.log.WithContext(ctx).Info("resetting Kubernetes cluster...")
+	output, err := uc.execCommand("sudo", "kubeadm", "reset", "--config", cloud.KubeadmResetConfig)
+	if err != nil {
+		uc.log.WithContext(ctx).Errorf("failed to reset Kubernetes cluster: %v, output: %s", err, output)
+		return err
+	}
+	uc.log.WithContext(ctx).Info("resetting Kubernetes cluster success")
+	return nil
+}
+
+// kubeadm upgrade
+func (uc *CloudUsecase) KubeadmUpgrade(ctx context.Context, cloud *Cloud) error {
+	uc.log.WithContext(ctx).Info("upgrading Kubernetes cluster...")
+	output, err := uc.execCommand("sudo", "kubeadm", "upgrade", "apply", "--config", cloud.KubeadmUpgradeConfig)
+	if err != nil {
+		uc.log.WithContext(ctx).Errorf("failed to upgrade Kubernetes cluster: %v, output: %s", err, output)
+		return err
+	}
+	uc.log.WithContext(ctx).Info("upgrading Kubernetes cluster success")
+	return nil
+}
+
+// kubeadm upgrade plan
+func (uc *CloudUsecase) KubeadmUpgradePlan(ctx context.Context, cloud *Cloud) error {
+	uc.log.WithContext(ctx).Info("getting Kubernetes cluster upgrade plan...")
+	output, err := uc.execCommand("sudo", "kubeadm", "upgrade", "plan", "--config", cloud.KubeadmUpgradeConfig)
+	if err != nil {
+		uc.log.WithContext(ctx).Errorf("failed to get Kubernetes cluster upgrade plan: %v, output: %s", err, output)
+		return err
+	}
+	uc.log.WithContext(ctx).Info("getting Kubernetes cluster upgrade plan success")
+	return nil
+}
+
 // seting ipv4 forward
 func (uc *CloudUsecase) SetingIpv4Forward(ctx context.Context) error {
 	uc.log.WithContext(ctx).Info("seting ipv4 forward...")
-	output, err := exec.Command("sudo", "sysctl", "-w", "net.ipv4.ip_forward=1").CombinedOutput()
+	output, err := uc.execCommand("sudo", "sysctl", "-w", "net.ipv4.ip_forward=1")
 	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to seting ipv4 forward: %v, output: %s", err, string(output))
+		uc.log.WithContext(ctx).Errorf("failed to seting ipv4 forward: %v, output: %s", err, output)
 		return err
 	}
 	uc.log.WithContext(ctx).Info("seting ipv4 forward success")
@@ -265,9 +222,9 @@ func (uc *CloudUsecase) SetingIpv4Forward(ctx context.Context) error {
 // close swap
 func (uc *CloudUsecase) CloseSwap(ctx context.Context) error {
 	uc.log.WithContext(ctx).Info("closing swap...")
-	output, err := exec.Command("sudo", "swapoff", "-a").CombinedOutput()
+	output, err := uc.execCommand("sudo", "swapoff", "-a")
 	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to close swap: %v, output: %s", err, string(output))
+		uc.log.WithContext(ctx).Errorf("failed to close swap: %v, output: %s", err, output)
 		return err
 	}
 	uc.log.WithContext(ctx).Info("closing swap success")
@@ -277,11 +234,47 @@ func (uc *CloudUsecase) CloseSwap(ctx context.Context) error {
 // CloseFirewall
 func (uc *CloudUsecase) CloseFirewall(ctx context.Context) error {
 	uc.log.WithContext(ctx).Info("closing firewall...")
-	output, err := exec.Command("sudo", "systemctl", "stop", "firewalld").CombinedOutput()
+	output, err := uc.execCommand("sudo", "systemctl", "stop", "firewalld")
 	if err != nil {
-		uc.log.WithContext(ctx).Errorf("failed to close firewall: %v, output: %s", err, string(output))
+		uc.log.WithContext(ctx).Errorf("failed to close firewall: %v, output: %s", err, output)
 		return err
 	}
 	uc.log.WithContext(ctx).Info("closing firewall success")
 	return nil
+}
+
+func (uc *CloudUsecase) runCommandWithLogging(command string, args ...string) error {
+	uc.log.Info("exec command: ", fmt.Sprintf("%s %s", command, strings.Join(args, " ")))
+	cmd := exec.Command(command, args...)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return errors.Wrap(err, "failed to get stdout pipe")
+	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return errors.Wrap(err, "failed to get stderr pipe")
+	}
+	if err := cmd.Start(); err != nil {
+		return errors.Wrap(err, "failed to start command")
+	}
+	go func() {
+		scanner := bufio.NewScanner(io.MultiReader(stdout, stderr))
+		for scanner.Scan() {
+			uc.log.Info(scanner.Text())
+		}
+	}()
+	if err := cmd.Wait(); err != nil {
+		return errors.Wrap(err, "command failed")
+	}
+	return nil
+}
+
+// exec command
+func (uc *CloudUsecase) execCommand(command string, args ...string) (output string, err error) {
+	uc.log.Info("exec command: ", fmt.Sprintf("%s %s", command, strings.Join(args, " ")))
+	outputBytes, err := exec.Command(command, args...).CombinedOutput()
+	if err != nil {
+		return "", errors.Wrap(err, string(outputBytes))
+	}
+	return string(outputBytes), err
 }

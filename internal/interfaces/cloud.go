@@ -59,8 +59,8 @@ func (c *CloudInterface) AddKubeletServiceAndSettingKubeadmConfig(ctx context.Co
 	return &v1alpha1.Msg{Message: "AddKubeletServiceAndSettingKubeadmConfig"}, nil
 }
 
-// JoinKubeadmWithJoinCommand
-func (c *CloudInterface) JoinKubeadmWithJoinCommand(ctx context.Context, req *v1alpha1.Cloud) (*v1alpha1.Msg, error) {
+// KubeadmJoin
+func (c *CloudInterface) KubeadmJoin(ctx context.Context, req *v1alpha1.Cloud) (*v1alpha1.Msg, error) {
 	if req.ControlPlaneEndpoint == "" {
 		return nil, errors.New("control plane endpoint is empty")
 	}
@@ -71,37 +71,50 @@ func (c *CloudInterface) JoinKubeadmWithJoinCommand(ctx context.Context, req *v1
 		return nil, errors.New("discovery token ca cert hash is empty")
 	}
 	cloud := c.interfaceToBiz(req)
-	err := c.uc.JoinKubeadmWithJoinCommand(ctx, cloud)
+	err := c.uc.KubeadmJoin(ctx, cloud)
 	if err != nil {
 		return nil, err
 	}
-	return &v1alpha1.Msg{Message: "JoinKubeadmWithJoinCommand"}, nil
+	return &v1alpha1.Msg{Message: "KubeadmJoin"}, nil
 }
 
-// JoinKubeadmWithJoinConfigFile
-func (c *CloudInterface) JoinKubeadmWithJoinConfigFile(ctx context.Context, req *v1alpha1.Cloud) (*v1alpha1.Msg, error) {
-	if req.JoinConfig == "" {
-		return nil, errors.New("join config is empty")
+// KubeadmInit
+func (c *CloudInterface) KubeadmInit(ctx context.Context, req *v1alpha1.Cloud) (*v1alpha1.Msg, error) {
+	if req.KubeadmInitConfig == "" || req.KubeadmInitClusterConfig == "" {
+		return nil, errors.New("kubeadm init config or kubeadm init cluster config is empty")
 	}
 	cloud := c.interfaceToBiz(req)
-	err := c.uc.JoinKubeadmWithJoinConfigFile(ctx, cloud)
+	err := c.uc.KubeadmInit(ctx, cloud)
 	if err != nil {
 		return nil, err
 	}
-	return &v1alpha1.Msg{Message: "JoinKubeadmWithJoinConfigFile"}, nil
+	return &v1alpha1.Msg{Message: "KubeadmInit"}, nil
 }
 
-// InitKubeadm
-func (c *CloudInterface) InitKubeadm(ctx context.Context, req *v1alpha1.Cloud) (*v1alpha1.Msg, error) {
-	if req.KubeadmInitConfig == "" {
-		return nil, errors.New("kubeadm init config is empty")
+// KubeadmReset
+func (c *CloudInterface) KubeadmReset(ctx context.Context, req *v1alpha1.Cloud) (*v1alpha1.Msg, error) {
+	if req.KubeadmResetConfig == "" {
+		return nil, errors.New("kubeadm reset config is empty")
 	}
 	cloud := c.interfaceToBiz(req)
-	err := c.uc.InitKubeadm(ctx, cloud)
+	err := c.uc.KubeadmReset(ctx, cloud)
 	if err != nil {
 		return nil, err
 	}
-	return &v1alpha1.Msg{Message: "InitKubeadm"}, nil
+	return &v1alpha1.Msg{Message: "KubeadmReset"}, nil
+}
+
+// KubeadmUpgrade
+func (c *CloudInterface) KubeadmUpgrade(ctx context.Context, req *v1alpha1.Cloud) (*v1alpha1.Msg, error) {
+	if req.KubeadmUpgradeConfig == "" {
+		return nil, errors.New("kubeadm upgrade config is empty")
+	}
+	cloud := c.interfaceToBiz(req)
+	err := c.uc.KubeadmUpgrade(ctx, cloud)
+	if err != nil {
+		return nil, err
+	}
+	return &v1alpha1.Msg{Message: "KubeadmUpgrade"}, nil
 }
 
 // SetingIpv4Forward
@@ -129,22 +142,6 @@ func (c *CloudInterface) CloseFirewall(ctx context.Context, _ *emptypb.Empty) (*
 		return nil, err
 	}
 	return &v1alpha1.Msg{Message: "CloseFirewall"}, nil
-}
-
-// biz cloud to interface cloud
-func (c *CloudInterface) bizToInterface(cloud *biz.Cloud) *v1alpha1.Cloud {
-	return &v1alpha1.Cloud{
-		Id:                       cloud.ID,
-		KubeadmInitConfig:        cloud.KubeadmInitConfig,
-		KubeadmConfig:            cloud.KubeadmConfig,
-		KubeletService:           cloud.KubeletService,
-		CrioVersion:              cloud.CRIOVersion,
-		Arch:                     cloud.ARCH,
-		Token:                    cloud.Token,
-		DiscoveryTokenCaCertHash: cloud.DiscoveryTokenCACertHash,
-		ControlPlaneEndpoint:     cloud.ControlPlaneEndpoint,
-		JoinConfig:               cloud.JoinConfig,
-	}
 }
 
 // interface cloud to biz cloud
