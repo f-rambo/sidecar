@@ -7,7 +7,9 @@ import (
 
 	v1alpha1 "github.com/f-rambo/ship/api/system/v1alpha1"
 	"github.com/f-rambo/ship/internal/biz"
+	"github.com/f-rambo/ship/internal/conf"
 	"github.com/f-rambo/ship/utils"
+	"github.com/fsnotify/fsnotify"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -17,63 +19,22 @@ type SystemInterface struct {
 	v1alpha1.UnimplementedSystemInterfaceServer
 	systemUc *biz.SystemUsecase
 	log      *log.Helper
+	c        *conf.Server
 }
 
-func NewSystemInterface(systemUc *biz.SystemUsecase, logger log.Logger) *SystemInterface {
+func NewSystemInterface(systemUc *biz.SystemUsecase, logger log.Logger, c *conf.Server) *SystemInterface {
 	return &SystemInterface{
 		systemUc: systemUc,
 		log:      log.NewHelper(logger),
+		c:        c,
 	}
 }
 
-// conn, err := grpc.DialInsecure(
-// 	ctx,
-// 	grpc.WithEndpoint(fmt.Sprintf("%s:%d", "localhost", 9001)),
-// )
-// if err != nil {
-// 	return nil, err
-// }
-// defer conn.Close()
-// client := systemv1alpha1.NewSystemInterfaceClient(conn)
-// stream, err := client.GetLogs(ctx)
-// if err != nil {
-// 	return nil, err
-// }
-
-// // 创建一个goroutine来接收来自服务端的消息
-// go func() {
-// 	for {
-// 		msg, err := stream.Recv()
-// 		if err == io.EOF {
-// 			return
-// 		}
-// 		if err != nil {
-// 			log.Fatalf("Error receiving message: %v", err)
-// 		}
-// 		fmt.Printf("Server: %s\n", msg.Log)
-// 	}
-// }()
-
-// i := 0
-// for {
-// 	err = stream.Send(&systemv1alpha1.LogRequest{
-// 		TailLines: 10,
-// 	})
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	time.Sleep(1 * time.Second)
-// 	if i >= 10 {
-// 		stream.CloseSend()
-// 		break
-// 	}
-// 	i++
-// }
-
 func (c *SystemInterface) GetLogs(stream v1alpha1.SystemInterface_GetLogsServer) error {
-	var lastReadPos int64
-
+	i := 0
 	for {
+		ctx, cancel := context.WithCancel(stream.Context())
+		defer cancel()
 		req, err := stream.Recv()
 		if err == io.EOF {
 			return nil
@@ -81,60 +42,113 @@ func (c *SystemInterface) GetLogs(stream v1alpha1.SystemInterface_GetLogsServer)
 		if err != nil {
 			return err
 		}
+		if i > 0 {
+			c.log.Info("repeat message, don't need to process")
+			continue
+		}
+		i++
+
 		if req.TailLines == 0 {
 			req.TailLines = 30
 		}
-		clusterLogPath, err := utils.GetPackageStorePathByNames("log", "ship.log")
+
+		logpath, err := utils.GetLogFilePath(c.c.Name)
 		if err != nil {
 			return err
 		}
-		if ok := utils.IsFileExist(clusterLogPath); !ok {
-			return errors.New("cluster log does not exist")
+		if ok := utils.IsFileExist(logpath); !ok {
+			return errors.New("log file does not exist")
 		}
 
-		file, err := os.Open(clusterLogPath)
+		file, err := os.Open(logpath)
 		if err != nil {
 			return err
 		}
 		defer file.Close()
 
-		var logs string
-		if lastReadPos == 0 {
-			// Read the last 30 lines
-			logs, err = utils.ReadLastNLines(file, int(req.TailLines))
+		// Read initial lines if TailLines is specified
+		if req.TailLines > 0 {
+			initialLogs, err := utils.ReadLastNLines(file, int(req.TailLines))
 			if err != nil {
 				return err
 			}
-		} else {
-			// Read from the last read position
-			_, err = file.Seek(lastReadPos, io.SeekStart)
+			err = stream.Send(&v1alpha1.LogResponse{Log: initialLogs})
 			if err != nil {
 				return err
 			}
-			newLogs, err := io.ReadAll(file)
-			if err != nil {
-				return err
-			}
-			logs = string(newLogs)
 		}
 
-		// If logs are empty, send a "." character
-		if logs == "" {
-			logs = "."
-		}
-
-		err = stream.Send(&v1alpha1.LogResponse{
-			Log: logs,
-		})
+		// Move to the end of the file
+		_, err = file.Seek(0, io.SeekEnd)
 		if err != nil {
 			return err
 		}
 
-		lastReadPos, err = file.Seek(0, io.SeekEnd)
+		// Start watching for new logs
+		watcher, err := fsnotify.NewWatcher()
 		if err != nil {
 			return err
 		}
+		defer watcher.Close()
+
+		err = watcher.Add(logpath)
+		if err != nil {
+			return err
+		}
+
+		go func() {
+			for {
+				select {
+				case event, ok := <-watcher.Events:
+					if !ok {
+						return
+					}
+					if event.Op&fsnotify.Write == fsnotify.Write {
+						newLogs, err := readNewLines(file)
+						if err != nil {
+							return
+						}
+						if newLogs != "" {
+							err = stream.Send(&v1alpha1.LogResponse{Log: newLogs})
+							if err != nil {
+								return
+							}
+						}
+					}
+				case err, ok := <-watcher.Errors:
+					if !ok {
+						return
+					}
+					c.log.Errorf("error watching log file: %v", err)
+				case <-ctx.Done():
+					c.log.Info("GetLogs stream closed by client")
+					return
+				}
+			}
+		}()
 	}
+}
+
+func readNewLines(file *os.File) (string, error) {
+	currentPos, err := file.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return "", err
+	}
+
+	newContent, err := io.ReadAll(file)
+	if err != nil {
+		return "", err
+	}
+
+	if len(newContent) > 0 {
+		_, err = file.Seek(currentPos+int64(len(newContent)), io.SeekStart)
+		if err != nil {
+			return "", err
+		}
+		return string(newContent), nil
+	}
+
+	return "", nil
 }
 
 func (c *SystemInterface) Ping(ctx context.Context, _ *emptypb.Empty) (*v1alpha1.Msg, error) {

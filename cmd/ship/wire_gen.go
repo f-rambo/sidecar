@@ -31,7 +31,7 @@ func wireApp(confServer *conf.Server, logger log.Logger) (*kratos.App, func(), e
 	}
 	systemRepo := data.NewSystemRepo(dataData, logger)
 	systemUsecase := biz.NewSystemUseCase(systemRepo, logger)
-	systemInterface := interfaces.NewSystemInterface(systemUsecase, logger)
+	systemInterface := interfaces.NewSystemInterface(systemUsecase, logger, confServer)
 	cloudRepo := data.NewCloudRepo(dataData, logger)
 	cloudUsecase := biz.NewCloudUseCase(cloudRepo, logger)
 	cloudInterface := interfaces.NewCloudInterface(cloudUsecase, logger)
