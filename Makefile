@@ -71,7 +71,7 @@ docker-push:
 .PHONY: docker-dev-build
 # docker-dev-build
 docker-dev-build:
-	docker build -f Dockerfile_dev -t ship-dev .
+	docker build -f Dockerfile.dev -t ship-dev .
 
 .PHONY: docker-dev
 # docker-dev

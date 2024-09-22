@@ -2,7 +2,6 @@ package interfaces
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"os"
 
@@ -84,15 +83,6 @@ func (c *SystemInterface) GetLogs(stream v1alpha1.SystemInterface_GetLogsServer)
 		}
 		if req.TailLines == 0 {
 			req.TailLines = 30
-		}
-		reqJson, err := json.Marshal(req)
-		if err != nil {
-			return err
-		}
-		clusterLogReq := &v1alpha1.LogRequest{}
-		err = json.Unmarshal(reqJson, clusterLogReq)
-		if err != nil {
-			return err
 		}
 		clusterLogPath, err := utils.GetPackageStorePathByNames("log", "ship.log")
 		if err != nil {
