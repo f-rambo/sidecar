@@ -43,7 +43,7 @@ func NewData(logger log.Logger) (*Data, func(), error) {
 	cleanup := func() {}
 	data := &Data{
 		log:           log.NewHelper(logger),
-		dbLoggerLevel: gormLogger.Info,
+		dbLoggerLevel: gormLogger.Warn,
 	}
 	dbFilePath, err := utils.GetPackageStorePathByNames(DBDriverSQLite.String(), DatabaseName)
 	if err != nil {
@@ -67,6 +67,7 @@ func NewData(logger log.Logger) (*Data, func(), error) {
 	// AutoMigrate
 	err = client.AutoMigrate(
 		&biz.System{},
+		&biz.Cloud{},
 	)
 	if err != nil {
 		return nil, cleanup, err

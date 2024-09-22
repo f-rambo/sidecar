@@ -1,4 +1,5 @@
 server:
+  debug: true
   name: "ship"
   version: 0.0.1
   http:
@@ -13,5 +14,3 @@ log:
   max_size: 500
   max_backups: 3
   max_age: 28
-  compress: true
-  local_time: true

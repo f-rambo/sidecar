@@ -6,6 +6,7 @@ type Bootstrap struct {
 }
 
 type Server struct {
+	Debug   bool       `json:"debug,omitempty"`
 	Name    string     `json:"name,omitempty"`
 	Version string     `json:"version,omitempty"`
 	HTTP    HTTPServer `json:"http,omitempty"`
@@ -25,9 +26,7 @@ type GRPCServer struct {
 }
 
 type Log struct {
-	MaxSize    int  `json:"max_size,omitempty"`
-	MaxBackups int  `json:"max_backups,omitempty"`
-	MaxAge     int  `json:"max_age,omitempty"`
-	Compress   bool `json:"compress,omitempty"`
-	LocalTime  bool `json:"local_time,omitempty"`
+	MaxSize    int `json:"max_size,omitempty"`
+	MaxBackups int `json:"max_backups,omitempty"`
+	MaxAge     int `json:"max_age,omitempty"`
 }

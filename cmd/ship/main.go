@@ -2,14 +2,11 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
-	"path/filepath"
 	"runtime"
 
 	"github.com/f-rambo/ship/internal/conf"
 	"github.com/f-rambo/ship/utils"
-	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"
@@ -76,25 +73,13 @@ func main() {
 	if err := c.Scan(&bc); err != nil {
 		panic(err)
 	}
-	Name = bc.Server.Name
-	Version = bc.Server.Version
 
-	logConf := bc.Log
-	logPath, err := utils.GetPackageStorePathByNames("log")
+	utilLogger, err := utils.NewLog(&bc)
 	if err != nil {
 		panic(err)
 	}
-	logger := log.With(log.NewStdLogger(&lumberjack.Logger{
-		Filename:   filepath.Join(logPath, fmt.Sprintf("%s.log", Name)),
-		MaxSize:    int(logConf.MaxSize), // megabytes
-		MaxBackups: int(logConf.MaxBackups),
-		MaxAge:     int(logConf.MaxAge), // days
-		Compress:   logConf.Compress,    // disabled by default
-		LocalTime:  logConf.LocalTime,
-	}),
-		"ts", log.DefaultTimestamp,
-		"caller", log.DefaultCaller,
-	)
+	defer utilLogger.Close()
+	logger := log.With(utilLogger, utils.GetLogContenteKeyvals()...)
 
 	app, cleanup, err := wireApp(&bc.Server, logger)
 	if err != nil {
