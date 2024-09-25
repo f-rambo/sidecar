@@ -8,13 +8,9 @@ package biz
 import "C"
 
 import (
-	"bufio"
 	"context"
-	"fmt"
-	"io"
 	"math"
 	n "net"
-	"os/exec"
 	"strings"
 
 	"github.com/f-rambo/ship/utils"
@@ -74,48 +70,48 @@ func (s *SystemUsecase) GetSystem(ctx context.Context) (*System, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = s.installSoftware("dmidecode")
+	err = s.InstallSoftware("dmidecode")
 	if err != nil {
 		return nil, err
 	}
 	// check current user is root
-	output, err := exec.Command("whoami").CombinedOutput()
+	output, err := utils.ExecCommand(s.log, "whoami")
 	if err != nil {
-		return nil, errors.Wrap(err, string(output))
+		return nil, err
 	}
 	if strings.TrimSpace(string(output)) != "root" {
 		// swtich to root user
-		output, err = exec.Command("sudo", "-i").CombinedOutput()
+		_, err = utils.ExecCommand(s.log, "sudo", "-i")
 		if err != nil {
-			return nil, errors.Wrap(err, string(output))
+			return nil, err
 		}
 	}
 	// get mac address
-	output, err = exec.Command("dmidecode", "-s", "system-uuid").CombinedOutput()
+	output, err = utils.ExecCommand(s.log, "dmidecode", "-s", "system-uuid")
 	if err != nil {
-		return nil, errors.Wrap(err, string(output))
+		return nil, err
 	}
 	system.MachineID = strings.TrimSpace(string(output))
 	// get system info
-	output, err = exec.Command("uname", "-a").CombinedOutput()
+	output, err = utils.ExecCommand(s.log, "uname", "-a")
 	if err != nil {
-		return nil, errors.Wrap(err, string(output))
+		return nil, err
 	}
 	system.Kernel = strings.TrimSpace(string(output))
 	// get system os
-	output, err = exec.Command("cat", "/etc/os-release").CombinedOutput()
+	output, err = utils.ExecCommand(s.log, "cat", "/etc/os-release")
 	if err != nil {
-		return nil, errors.Wrap(err, string(output))
+		return nil, err
 	}
 	system.OSInfo = strings.TrimSpace(string(output))
-	output, err = exec.Command("uname", "-s").CombinedOutput()
+	output, err = utils.ExecCommand(s.log, "uname", "-s")
 	if err != nil {
-		return nil, errors.Wrap(err, string(output))
+		return nil, err
 	}
 	system.OS = strings.TrimSpace(string(output))
-	output, err = exec.Command("uname", "-m").CombinedOutput()
+	output, err = utils.ExecCommand(s.log, "uname", "-m")
 	if err != nil {
-		return nil, errors.Wrap(err, string(output))
+		return nil, err
 	}
 	arch, ok := ARCH_MAP[strings.TrimSpace(string(output))]
 	if !ok {
@@ -134,13 +130,13 @@ func (s *SystemUsecase) GetSystem(ctx context.Context) (*System, error) {
 	}
 	system.Memory = math.Ceil(float64(v.Total) / 1024 / 1024 / 1024)
 	// gpu info
-	err = s.installSoftware("pciutils")
+	err = s.InstallSoftware("pciutils")
 	if err != nil {
 		return nil, err
 	}
-	output, err = exec.Command("lspci").CombinedOutput()
+	output, err = utils.ExecCommand(s.log, "lspci")
 	if err != nil {
-		return nil, errors.Wrap(err, string(output))
+		return nil, err
 	}
 	nvidiaLines := strings.Count(strings.ToLower(string(output)), "nvidia")
 	system.GPU = int32(nvidiaLines)
@@ -185,27 +181,27 @@ func (s *SystemUsecase) GetSystem(ctx context.Context) (*System, error) {
 	return system, nil
 }
 
-func (s *SystemUsecase) installSoftware(softwares ...string) error {
+func (s *SystemUsecase) InstallSoftware(softwares ...string) error {
 	// check linux version /etc/debian_version || /etc/redhat-release
 	ok := utils.IsFileExist("/etc/debian_version")
 	if ok {
 		s.log.Info("debian")
 		// check if software is already downloaded
 		for _, software := range softwares {
-			output, err := exec.Command("apt-cache", "policy", software).CombinedOutput()
+			output, err := utils.ExecCommand(s.log, "apt-cache", "policy", software)
 			if err != nil {
-				return errors.Wrap(err, string(output))
+				return err
 			}
 			if !strings.Contains(string(output), "Installed: (none)") && string(output) != "" {
 				s.log.Info("software already downloaded", software)
 				continue
 			}
 			// update apt-get
-			if err := s.runCommandWithLogging("apt", "update"); err != nil {
+			if err := utils.RunCommandWithLogging(s.log, "sudo", "apt", "update"); err != nil {
 				return err
 			}
 			// install software
-			if err := s.runCommandWithLogging("apt", "install", "-y", software); err != nil {
+			if err := utils.RunCommandWithLogging(s.log, "sudo", "apt", "install", "-y", software); err != nil {
 				return err
 			}
 		}
@@ -216,60 +212,24 @@ func (s *SystemUsecase) installSoftware(softwares ...string) error {
 		s.log.Info("redhat")
 		// check if software is already downloaded
 		for _, software := range softwares {
-			output, err := exec.Command("yum", "list", "installed", software).CombinedOutput()
+			output, err := utils.ExecCommand(s.log, "yum", "list", "installed", software)
 			if err != nil {
-				return errors.Wrap(err, string(output))
+				return err
 			}
 			if !strings.Contains(string(output), "Installed Packages") && string(output) != "" {
 				s.log.Info("software already downloaded", software)
 				continue
 			}
 			// update yum
-			if err := s.runCommandWithLogging("sudo", "yum", "update"); err != nil {
+			if err := utils.RunCommandWithLogging(s.log, "sudo", "yum", "update"); err != nil {
 				return err
 			}
 			// install software
-			if err := s.runCommandWithLogging("sudo", "yum", "install", "-y", software); err != nil {
+			if err := utils.RunCommandWithLogging(s.log, "sudo", "yum", "install", "-y", software); err != nil {
 				return err
 			}
 		}
 		return nil
 	}
 	return errors.New("not support system")
-}
-
-func (s *SystemUsecase) runCommandWithLogging(command string, args ...string) error {
-	s.log.Info("exec command: ", fmt.Sprintf("%s %s", command, strings.Join(args, " ")))
-	cmd := exec.Command(command, args...)
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return errors.Wrap(err, "failed to get stdout pipe")
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return errors.Wrap(err, "failed to get stderr pipe")
-	}
-	if err := cmd.Start(); err != nil {
-		return errors.Wrap(err, "failed to start command")
-	}
-	go func() {
-		scanner := bufio.NewScanner(io.MultiReader(stdout, stderr))
-		for scanner.Scan() {
-			s.log.Info(scanner.Text())
-		}
-	}()
-	if err := cmd.Wait(); err != nil {
-		return errors.Wrap(err, "command failed")
-	}
-	return nil
-}
-
-// exec command
-func (s *SystemUsecase) execCommand(command string, args ...string) (output string, err error) {
-	s.log.Info("exec command: ", fmt.Sprintf("%s %s", command, strings.Join(args, " ")))
-	outputBytes, err := exec.Command(command, args...).CombinedOutput()
-	if err != nil {
-		return "", errors.Wrap(err, string(outputBytes))
-	}
-	return string(outputBytes), err
 }
