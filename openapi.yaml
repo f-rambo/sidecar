@@ -24,7 +24,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/cloud.v1alpha1.Msg'
+                                $ref: '#/components/schemas/common.Msg'
     /api/v1alpha1/cloud/close_firewall:
         post:
             tags:
@@ -41,7 +41,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/cloud.v1alpha1.Msg'
+                                $ref: '#/components/schemas/common.Msg'
     /api/v1alpha1/cloud/close_swap:
         post:
             tags:
@@ -58,7 +58,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/cloud.v1alpha1.Msg'
+                                $ref: '#/components/schemas/common.Msg'
     /api/v1alpha1/cloud/install_kubeadm_kubelet_crio:
         post:
             tags:
@@ -77,7 +77,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/cloud.v1alpha1.Msg'
+                                $ref: '#/components/schemas/common.Msg'
     /api/v1alpha1/cloud/kubeadm_init:
         post:
             tags:
@@ -96,7 +96,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/cloud.v1alpha1.Msg'
+                                $ref: '#/components/schemas/common.Msg'
     /api/v1alpha1/cloud/kubeadm_join:
         post:
             tags:
@@ -115,7 +115,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/cloud.v1alpha1.Msg'
+                                $ref: '#/components/schemas/common.Msg'
     /api/v1alpha1/cloud/kubeadm_reset:
         post:
             tags:
@@ -134,7 +134,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/cloud.v1alpha1.Msg'
+                                $ref: '#/components/schemas/common.Msg'
     /api/v1alpha1/cloud/kubeadm_upgrade:
         post:
             tags:
@@ -153,7 +153,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/cloud.v1alpha1.Msg'
+                                $ref: '#/components/schemas/common.Msg'
     /api/v1alpha1/cloud/ping:
         get:
             tags:
@@ -165,7 +165,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/cloud.v1alpha1.Msg'
+                                $ref: '#/components/schemas/common.Msg'
     /api/v1alpha1/cloud/setting_ipv4_forward:
         post:
             tags:
@@ -182,7 +182,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/cloud.v1alpha1.Msg'
+                                $ref: '#/components/schemas/common.Msg'
     /api/v1alpha1/system:
         get:
             tags:
@@ -206,7 +206,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/system.v1alpha1.Msg'
+                                $ref: '#/components/schemas/common.Msg'
 components:
     schemas:
         cloud.v1alpha1.Cloud:
@@ -242,15 +242,7 @@ components:
                     type: string
                 joinConfig:
                     type: string
-        cloud.v1alpha1.Msg:
-            type: object
-            properties:
-                Reason:
-                    type: integer
-                    format: enum
-                Message:
-                    type: string
-        system.v1alpha1.Msg:
+        common.Msg:
             type: object
             properties:
                 Reason:

@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/f-rambo/ship/api/common"
 	v1alpha1 "github.com/f-rambo/ship/api/system/v1alpha1"
 	"github.com/f-rambo/ship/internal/biz"
 	"github.com/f-rambo/ship/internal/conf"
@@ -151,8 +152,8 @@ func readNewLines(file *os.File) (string, error) {
 	return "", nil
 }
 
-func (c *SystemInterface) Ping(ctx context.Context, _ *emptypb.Empty) (*v1alpha1.Msg, error) {
-	return &v1alpha1.Msg{Message: "pong"}, nil
+func (c *SystemInterface) Ping(ctx context.Context, _ *emptypb.Empty) (*common.Msg, error) {
+	return common.Response(), nil
 }
 
 func (c *SystemInterface) GetSystem(ctx context.Context, _ *emptypb.Empty) (*v1alpha1.System, error) {
