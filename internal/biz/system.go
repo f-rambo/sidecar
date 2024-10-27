@@ -25,21 +25,21 @@ import (
 // syscall
 
 type System struct {
-	ID         int64   `json:"id" gorm:"column:id;primaryKey;AUTO_INCREMENT"`
-	OS         string  `json:"os" gorm:"column:os; default:''; NOT NULL"`
-	OSInfo     string  `json:"os_info" gorm:"column:os_info; default:''; NOT NULL"`
-	ARCH       string  `json:"arch" gorm:"column:arch; default:''; NOT NULL"`
-	CPU        int32   `json:"cpu" gorm:"column:cpu; default:0; NOT NULL"`
-	Memory     float64 `json:"memory" gorm:"column:memory; default:0; NOT NULL"`
-	GPU        int32   `json:"gpu" gorm:"column:gpu; default:0; NOT NULL"`
-	GpuSpec    string  `json:"gpu_spec" gorm:"column:gpu_spec; default:''; NOT NULL"`
-	DataDisk   int32   `json:"data_disk" gorm:"column:data_disk; default:0; NOT NULL"`
-	Kernel     string  `json:"kernel" gorm:"column:kernel; default:''; NOT NULL"`
-	Container  string  `json:"container" gorm:"column:container; default:''; NOT NULL"`
-	Kubelet    string  `json:"kubelet" gorm:"column:kubelet; default:''; NOT NULL"`
-	KubeProxy  string  `json:"kube_proxy" gorm:"column:kube_proxy; default:''; NOT NULL"`
-	InternalIP string  `json:"internal_ip" gorm:"column:internal_ip; default:''; NOT NULL"`
-	MachineID  string  `json:"machine_id" gorm:"column:machine_id; default:''; NOT NULL"`
+	ID         int64  `json:"id" gorm:"column:id;primaryKey;AUTO_INCREMENT"`
+	OS         string `json:"os" gorm:"column:os; default:''; NOT NULL"`
+	OSInfo     string `json:"os_info" gorm:"column:os_info; default:''; NOT NULL"`
+	ARCH       string `json:"arch" gorm:"column:arch; default:''; NOT NULL"`
+	CPU        int32  `json:"cpu" gorm:"column:cpu; default:0; NOT NULL"`
+	Memory     int32  `json:"memory" gorm:"column:memory; default:0; NOT NULL"`
+	GPU        int32  `json:"gpu" gorm:"column:gpu; default:0; NOT NULL"`
+	GpuSpec    string `json:"gpu_spec" gorm:"column:gpu_spec; default:''; NOT NULL"`
+	DataDisk   int32  `json:"data_disk" gorm:"column:data_disk; default:0; NOT NULL"`
+	Kernel     string `json:"kernel" gorm:"column:kernel; default:''; NOT NULL"`
+	Container  string `json:"container" gorm:"column:container; default:''; NOT NULL"`
+	Kubelet    string `json:"kubelet" gorm:"column:kubelet; default:''; NOT NULL"`
+	KubeProxy  string `json:"kube_proxy" gorm:"column:kube_proxy; default:''; NOT NULL"`
+	InternalIP string `json:"internal_ip" gorm:"column:internal_ip; default:''; NOT NULL"`
+	MachineID  string `json:"machine_id" gorm:"column:machine_id; default:''; NOT NULL"`
 }
 
 type SystemRepo interface {
@@ -128,7 +128,7 @@ func (s *SystemUsecase) GetSystem(ctx context.Context) (*System, error) {
 	if err != nil {
 		return nil, err
 	}
-	system.Memory = math.Ceil(float64(v.Total) / 1024 / 1024 / 1024)
+	system.Memory = int32(math.Ceil(float64(v.Total) / 1024 / 1024 / 1024))
 	// gpu info
 	err = s.InstallSoftware("pciutils")
 	if err != nil {
