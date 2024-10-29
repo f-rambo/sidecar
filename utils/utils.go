@@ -10,12 +10,16 @@ import (
 	"time"
 )
 
+const (
+	ShipStoreDirName = ".ship"
+)
+
 func GetPackageStorePathByNames(packageNames ...string) (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
-	packageNames = append([]string{home, ".ship"}, packageNames...)
+	packageNames = append([]string{home, ShipStoreDirName}, packageNames...)
 	return filepath.Join(packageNames...), nil
 }
 

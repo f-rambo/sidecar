@@ -10,9 +10,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-// exec command
-func ExecCommand(log *log.Helper, command string, args ...string) (output string, err error) {
-	log.Info("exec command: %s %s", command, strings.Join(args, " "))
+type Bash struct {
+	log *log.Helper
+}
+
+func NewBash(log *log.Helper) *Bash {
+	return &Bash{
+		log: log,
+	}
+}
+
+func (b *Bash) RunCommand(command string, args ...string) (output string, err error) {
+	b.log.Info("exec command: %s %s", command, strings.Join(args, " "))
 
 	cmd := exec.Command(command, args...)
 	var stdout, stderr bytes.Buffer
@@ -29,16 +38,14 @@ func ExecCommand(log *log.Helper, command string, args ...string) (output string
 	}
 
 	if stderrStr != "" {
-		return stdoutStr, errors.WithMessage(errors.New(stderrStr), "command failed")
+		log.Warnf("command wrote to stderr: %s", stderrStr)
 	}
-
-	log.Info(stdoutStr)
 
 	return stdoutStr, nil
 }
 
-func RunCommandWithLogging(log *log.Helper, command string, args ...string) error {
-	log.Info("exec command: %s %s", command, strings.Join(args, " "))
+func (b *Bash) RunCommandWithLogging(command string, args ...string) error {
+	b.log.Info("exec command: %s %s", command, strings.Join(args, " "))
 	cmd := exec.Command(command, args...)
 
 	stdout, err := cmd.StdoutPipe()
@@ -54,8 +61,6 @@ func RunCommandWithLogging(log *log.Helper, command string, args ...string) erro
 		return errors.Wrap(err, "failed to start command")
 	}
 
-	var stderrBuffer bytes.Buffer
-
 	go func() {
 		scanner := bufio.NewScanner(stdout)
 		for scanner.Scan() {
@@ -66,19 +71,12 @@ func RunCommandWithLogging(log *log.Helper, command string, args ...string) erro
 	go func() {
 		scanner := bufio.NewScanner(stderr)
 		for scanner.Scan() {
-			line := scanner.Text()
-			log.Error(line)
-			stderrBuffer.WriteString(line + "\n")
+			log.Warn(scanner.Text())
 		}
 	}()
 
 	if err := cmd.Wait(); err != nil {
 		return errors.Wrap(err, "command failed")
 	}
-
-	if stderrBuffer.Len() > 0 {
-		return errors.Errorf("command wrote to stderr: %s", stderrBuffer.String())
-	}
-
 	return nil
 }

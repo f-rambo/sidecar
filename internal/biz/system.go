@@ -74,42 +74,31 @@ func (s *SystemUsecase) GetSystem(ctx context.Context) (*System, error) {
 	if err != nil {
 		return nil, err
 	}
-	// check current user is root
-	output, err := utils.ExecCommand(s.log, "whoami")
-	if err != nil {
-		return nil, err
-	}
-	if strings.TrimSpace(string(output)) != "root" {
-		// swtich to root user
-		_, err = utils.ExecCommand(s.log, "sudo", "-i")
-		if err != nil {
-			return nil, err
-		}
-	}
+	bash := utils.NewBash(s.log)
 	// get mac address
-	output, err = utils.ExecCommand(s.log, "dmidecode", "-s", "system-uuid")
+	output, err := bash.RunCommand("dmidecode", "-s", "system-uuid")
 	if err != nil {
 		return nil, err
 	}
 	system.MachineID = strings.TrimSpace(string(output))
 	// get system info
-	output, err = utils.ExecCommand(s.log, "uname", "-a")
+	output, err = bash.RunCommand("uname", "-a")
 	if err != nil {
 		return nil, err
 	}
 	system.Kernel = strings.TrimSpace(string(output))
 	// get system os
-	output, err = utils.ExecCommand(s.log, "cat", "/etc/os-release")
+	output, err = bash.RunCommand("cat", "/etc/os-release")
 	if err != nil {
 		return nil, err
 	}
 	system.OSInfo = strings.TrimSpace(string(output))
-	output, err = utils.ExecCommand(s.log, "uname", "-s")
+	output, err = bash.RunCommand("uname", "-s")
 	if err != nil {
 		return nil, err
 	}
 	system.OS = strings.TrimSpace(string(output))
-	output, err = utils.ExecCommand(s.log, "uname", "-m")
+	output, err = bash.RunCommand("uname", "-m")
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +123,7 @@ func (s *SystemUsecase) GetSystem(ctx context.Context) (*System, error) {
 	if err != nil {
 		return nil, err
 	}
-	output, err = utils.ExecCommand(s.log, "lspci")
+	output, err = bash.RunCommand("lspci")
 	if err != nil {
 		return nil, err
 	}
@@ -182,13 +171,14 @@ func (s *SystemUsecase) GetSystem(ctx context.Context) (*System, error) {
 }
 
 func (s *SystemUsecase) InstallSoftware(softwares ...string) error {
+	bash := utils.NewBash(s.log)
 	// check linux version /etc/debian_version || /etc/redhat-release
 	ok := utils.IsFileExist("/etc/debian_version")
 	if ok {
 		s.log.Info("debian")
 		// check if software is already downloaded
 		for _, software := range softwares {
-			output, err := utils.ExecCommand(s.log, "apt-cache", "policy", software)
+			output, err := bash.RunCommand("apt-cache", "policy", software)
 			if err != nil {
 				return err
 			}
@@ -197,11 +187,11 @@ func (s *SystemUsecase) InstallSoftware(softwares ...string) error {
 				continue
 			}
 			// update apt-get
-			if err := utils.RunCommandWithLogging(s.log, "sudo", "apt", "update"); err != nil {
+			if err := bash.RunCommandWithLogging("apt", "update"); err != nil {
 				return err
 			}
 			// install software
-			if err := utils.RunCommandWithLogging(s.log, "sudo", "apt", "install", "-y", software); err != nil {
+			if err := bash.RunCommandWithLogging("apt", "install", "-y", software); err != nil {
 				return err
 			}
 		}
@@ -212,7 +202,7 @@ func (s *SystemUsecase) InstallSoftware(softwares ...string) error {
 		s.log.Info("redhat")
 		// check if software is already downloaded
 		for _, software := range softwares {
-			output, err := utils.ExecCommand(s.log, "yum", "list", "installed", software)
+			output, err := bash.RunCommand("yum", "list", "installed", software)
 			if err != nil {
 				return err
 			}
@@ -221,11 +211,11 @@ func (s *SystemUsecase) InstallSoftware(softwares ...string) error {
 				continue
 			}
 			// update yum
-			if err := utils.RunCommandWithLogging(s.log, "sudo", "yum", "update"); err != nil {
+			if err := bash.RunCommandWithLogging("sudo", "yum", "update"); err != nil {
 				return err
 			}
 			// install software
-			if err := utils.RunCommandWithLogging(s.log, "sudo", "yum", "install", "-y", software); err != nil {
+			if err := bash.RunCommandWithLogging("sudo", "yum", "install", "-y", software); err != nil {
 				return err
 			}
 		}
