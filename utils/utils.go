@@ -221,3 +221,11 @@ func ReadLastNLines(file *os.File, n int) (string, error) {
 	}
 	return strings.Join(lines, "\n"), nil
 }
+
+func MergePath(paths ...string) string {
+	pathArr := make([]string, 0)
+	for _, path := range paths {
+		pathArr = append(pathArr, strings.Split(path, "/")...)
+	}
+	return strings.Join(pathArr, "/")
+}

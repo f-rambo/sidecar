@@ -28,32 +28,32 @@ func (c *CloudInterface) Ping(ctx context.Context, _ *emptypb.Empty) (*common.Ms
 	return common.Response(), nil
 }
 
-// InstallKubeadmKubeletCriO
-func (c *CloudInterface) InstallKubeadmKubeletCriO(ctx context.Context, req *v1alpha1.Cloud) (*common.Msg, error) {
-	if req.Arch == "" {
-		return nil, errors.New("arch is empty")
-	}
-	if req.CrioVersion == "" {
-		return nil, errors.New("crio version is empty")
+// node init
+func (c *CloudInterface) NodeInit(ctx context.Context, req *v1alpha1.Cloud) (*common.Msg, error) {
+	if req == nil {
+		return nil, errors.New("cloud is empty")
 	}
 	cloud := c.interfaceToBiz(req)
-	err := c.uc.InstallKubeadmKubeletCriO(ctx, cloud)
+	if cloud.NodeID == 0 || cloud.NodeName == "" {
+		return nil, errors.New("node id or node name is empty")
+	}
+	err := c.uc.NodeInit(ctx, cloud)
 	if err != nil {
 		return nil, err
 	}
 	return common.Response(), nil
 }
 
-// AddKubeletServiceAndSettingKubeadmConfig
-func (c *CloudInterface) AddKubeletServiceAndSettingKubeadmConfig(ctx context.Context, req *v1alpha1.Cloud) (*common.Msg, error) {
-	if req.KubeadmConfig == "" {
-		return nil, errors.New("kubeadm config is empty")
-	}
-	if req.KubeletService == "" {
-		return nil, errors.New("kubelet service is empty")
+// InstallKubeadmKubeletCriO
+func (c *CloudInterface) InstallKubeadmKubeletCriO(ctx context.Context, req *v1alpha1.Cloud) (*common.Msg, error) {
+	if req == nil {
+		return nil, errors.New("cloud is empty")
 	}
 	cloud := c.interfaceToBiz(req)
-	err := c.uc.AddKubeletServiceAndSettingKubeadmConfig(ctx, cloud)
+	if cloud.ClusterVersion == "" {
+		return nil, errors.New("cluster version is empty")
+	}
+	err := c.uc.InstallKubeadmKubeletCriO(ctx, cloud)
 	if err != nil {
 		return nil, err
 	}
@@ -62,6 +62,9 @@ func (c *CloudInterface) AddKubeletServiceAndSettingKubeadmConfig(ctx context.Co
 
 // KubeadmJoin
 func (c *CloudInterface) KubeadmJoin(ctx context.Context, req *v1alpha1.Cloud) (*common.Msg, error) {
+	if req == nil {
+		return nil, errors.New("cloud is empty")
+	}
 	if req.ControlPlaneEndpoint == "" {
 		return nil, errors.New("control plane endpoint is empty")
 	}
@@ -81,8 +84,8 @@ func (c *CloudInterface) KubeadmJoin(ctx context.Context, req *v1alpha1.Cloud) (
 
 // KubeadmInit
 func (c *CloudInterface) KubeadmInit(ctx context.Context, req *v1alpha1.Cloud) (*common.Msg, error) {
-	if req.KubeadmInitConfig == "" || req.KubeadmInitClusterConfig == "" {
-		return nil, errors.New("kubeadm init config or kubeadm init cluster config is empty")
+	if req == nil {
+		return nil, errors.New("cloud is empty")
 	}
 	cloud := c.interfaceToBiz(req)
 	err := c.uc.KubeadmInit(ctx, cloud)
@@ -94,8 +97,8 @@ func (c *CloudInterface) KubeadmInit(ctx context.Context, req *v1alpha1.Cloud) (
 
 // KubeadmReset
 func (c *CloudInterface) KubeadmReset(ctx context.Context, req *v1alpha1.Cloud) (*common.Msg, error) {
-	if req.KubeadmResetConfig == "" {
-		return nil, errors.New("kubeadm reset config is empty")
+	if req == nil {
+		return nil, errors.New("cloud is empty")
 	}
 	cloud := c.interfaceToBiz(req)
 	err := c.uc.KubeadmReset(ctx, cloud)
@@ -107,38 +110,11 @@ func (c *CloudInterface) KubeadmReset(ctx context.Context, req *v1alpha1.Cloud) 
 
 // KubeadmUpgrade
 func (c *CloudInterface) KubeadmUpgrade(ctx context.Context, req *v1alpha1.Cloud) (*common.Msg, error) {
-	if req.KubeadmUpgradeConfig == "" {
-		return nil, errors.New("kubeadm upgrade config is empty")
+	if req == nil {
+		return nil, errors.New("cloud is empty")
 	}
 	cloud := c.interfaceToBiz(req)
 	err := c.uc.KubeadmUpgrade(ctx, cloud)
-	if err != nil {
-		return nil, err
-	}
-	return common.Response(), nil
-}
-
-// SetingIpv4Forward
-func (c *CloudInterface) SetingIpv4Forward(ctx context.Context, _ *emptypb.Empty) (*common.Msg, error) {
-	err := c.uc.SetingIpv4Forward(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return common.Response(), nil
-}
-
-// CloseSwap
-func (c *CloudInterface) CloseSwap(ctx context.Context, _ *emptypb.Empty) (*common.Msg, error) {
-	err := c.uc.CloseSwap(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return common.Response(), nil
-}
-
-// CloseFirewall
-func (c *CloudInterface) CloseFirewall(ctx context.Context, _ *emptypb.Empty) (*common.Msg, error) {
-	err := c.uc.CloseFirewall(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -149,11 +125,9 @@ func (c *CloudInterface) CloseFirewall(ctx context.Context, _ *emptypb.Empty) (*
 func (c *CloudInterface) interfaceToBiz(cloud *v1alpha1.Cloud) *biz.Cloud {
 	return &biz.Cloud{
 		ID:                       cloud.Id,
-		KubeadmInitConfig:        cloud.KubeadmInitConfig,
-		KubeadmConfig:            cloud.KubeadmConfig,
-		KubeletService:           cloud.KubeletService,
-		CRIOVersion:              cloud.CrioVersion,
-		ARCH:                     cloud.Arch,
+		NodeID:                   cloud.NodeId,
+		NodeName:                 cloud.NodeName,
+		ClusterVersion:           cloud.ClusterVersion,
 		Token:                    cloud.Token,
 		DiscoveryTokenCACertHash: cloud.DiscoveryTokenCaCertHash,
 		ControlPlaneEndpoint:     cloud.ControlPlaneEndpoint,
