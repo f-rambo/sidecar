@@ -1,6 +1,6 @@
 GOHOSTOS:=$(shell go env GOHOSTOS)
 GOPATH:=$(shell go env GOPATH)
-VERSION=0.0.1
+VERSION=v0.0.1
 SERVER_NAME=ship
 AUTHOR=frambos
 IMG=$(AUTHOR)/$(SERVER_NAME):$(VERSION)
@@ -120,7 +120,7 @@ multi-platform-build-release:
 		docker run -it -d --rm --name $$container_name $$platform/$(IMG) ; \
 		docker cp $$container_name:/app.tar.gz ./built/$$container_name.tar.gz ; \
 		docker cp $$container_name:/app.tar.gz.sha256sum ./built/$$container_name.tar.gz.sha256sum ; \
-		docker stop $$container_name; \
+		docker rm -f $$container_name || (echo "Failed to remove container $$container_name" && exit 1); \
 	done
 
 .PHONY: multi-platform-build-push
