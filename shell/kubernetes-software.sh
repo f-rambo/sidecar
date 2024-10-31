@@ -1,8 +1,7 @@
 #!/bin/bash
 set -e
 
-# 参数检查
-if [ -z "${1// }" ] || [ -z "${2// }" ]; then
+if [ -z "${1// /}" ] || [ -z "${2// /}" ]; then
   echo "Usage: $0 <RESOURCE> <CLUSTER_VERSION>"
   exit 1
 fi
@@ -32,19 +31,20 @@ fi
 
 ARCH=$(uname -m)
 case $ARCH in
-  aarch64)
-    ARCH="arm64"
-    ;;
-  x86_64)
-    ARCH="amd64"
-    ;;
-  *)
-    echo "Error: Unsupported architecture $ARCH. Supported architectures are: aarch64, x86_64"
-    exit 1
-    ;;
+aarch64)
+  ARCH="arm64"
+  ;;
+x86_64)
+  ARCH="amd64"
+  ;;
+*)
+  echo "Error: Unsupported architecture $ARCH. Supported architectures are: aarch64, x86_64"
+  exit 1
+  ;;
 esac
 
-kubeadmConfig=$(cat <<EOF
+kubeadmConfig=$(
+  cat <<EOF
 # Note: This dropin only works with kubeadm and kubelet v1.11+
 [Service]
 Environment="KUBELET_KUBECONFIG_ARGS=--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf"
@@ -58,7 +58,8 @@ ExecStart=/usr/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_CONFIG_ARGS $KUBELE
 EOF
 )
 
-kubeletService=$(cat <<EOF
+kubeletService=$(
+  cat <<EOF
 [Unit]
 Description=kubelet: The Kubernetes Node Agent
 Documentation=https://kubernetes.io/docs/
@@ -77,71 +78,88 @@ EOF
 )
 
 function install_crio() {
-      crioPath="$RESOURCE/kubernetes-software/$CLUSTER_VERSION/crio/$ARCH/cri-o"
+  crioPath="$RESOURCE/kubernetes-software/$CLUSTER_VERSION/crio/$ARCH/cri-o"
 
-      if [ ! -d "$crioPath" ] || [ ! -r "$crioPath" ]; then
-      echo "Error: Directory $crioPath does not exist or is not readable"
-      exit 1
-      fi
+  if [ ! -d "$crioPath" ] || [ ! -r "$crioPath" ]; then
+    echo "Error: Directory $crioPath does not exist or is not readable"
+    exit 1
+  fi
 
-      if [ ! -f "$crioPath/install" ]; then
-      echo "Error: File $crioPath/install does not exist"
-      exit 1
-      fi
+  if [ ! -f "$crioPath/install" ]; then
+    echo "Error: File $crioPath/install does not exist"
+    exit 1
+  fi
 
-      # 确保 install 脚本具有执行权限
-      if [ ! -x "$crioPath/install" ]; then
-      chmod +x "$crioPath/install"
-      fi
+  # 确保 install 脚本具有执行权限
+  if [ ! -x "$crioPath/install" ]; then
+    chmod +x "$crioPath/install"
+  fi
 
-      cd "$crioPath" && ./install
+  cd "$crioPath" && ./install && cd -
+
+  crictlPath="$RESOURCE/kubernetes-software/$CLUSTER_VERSION/crictl/$ARCH/crictl"
+  if [ ! -d "$crictlPath" ] || [ ! -r "$crictlPath" ]; then
+    echo "Error: Directory $crictlPath does not exist or is not readable"
+    exit 1
+  fi
+
+  if [ ! -f "$crictlPath/crictl" ]; then
+    echo "Error: File $crictlPath/crictl does not exist"
+    exit 1
+  fi
+
+  mv "$crictlPath/crictl" /usr/local/bin/crictl && chmod +x /usr/local/bin/crictl
+
 }
 
+function install_kubernetes_software() {
+  kubernetesPath="$RESOURCE/kubernetes-software/$CLUSTER_VERSION/kubernetes/$ARCH"
 
-function install_kubernetes() {
-      kubernetesPath="$RESOURCE/kubernetes-software/$CLUSTER_VERSION/kubernetes/$ARCH"
+  if [ ! -d "$kubernetesPath" ] || [ ! -r "$kubernetesPath" ]; then
+    echo "Error: Directory $kubernetesPath does not exist or is not readable"
+    exit 1
+  fi
 
-      if [ ! -d "$kubernetesPath" ] || [ ! -r "$kubernetesPath" ]; then
-      echo "Error: Directory $kubernetesPath does not exist or is not readable"
-      exit 1
-      fi
+  if [ ! -f "$kubernetesPath/kubeadm" ]; then
+    echo "Error: File $kubernetesPath/kubeadm does not exist"
+    exit 1
+  fi
 
-      if [ ! -f "$kubernetesPath/kubeadm" ]; then
-      echo "Error: File $kubernetesPath/kubeadm does not exist"
-      exit 1
-      fi
+  if [ ! -x "$kubernetesPath/kubeadm" ]; then
+    chmod +x "$kubernetesPath/kubeadm"
+  fi
 
-      if [ ! -x "$kubernetesPath/kubeadm" ]; then
-      chmod +x "$kubernetesPath/kubeadm"
-      fi
+  mv "$kubernetesPath/kubeadm" /usr/local/bin/kubeadm
 
-      mv "$kubernetesPath/kubeadm" /usr/local/bin/kubeadm
+  if [ ! -f "$kubernetesPath/kubectl" ]; then
+    echo "Error: File $kubernetesPath/kubectl does not exist"
+    exit 1
+  fi
 
-      if [ ! -f "$kubernetesPath/kubectl" ]; then
-      echo "Error: File $kubernetesPath/kubectl does not exist"
-      exit 1
-      fi
+  if [ ! -x "$kubernetesPath/kubectl" ]; then
+    chmod +x "$kubernetesPath/kubectl"
+  fi
 
-      if [ ! -x "$kubernetesPath/kubectl" ]; then
-      chmod +x "$kubernetesPath/kubectl"
-      fi
+  mv "$kubernetesPath/kubectl" /usr/local/bin/kubectl
 
-      mv "$kubernetesPath/kubectl" /usr/local/bin/kubectl
+  if ! echo "$kubeadmConfig" | sed "s:/usr/bin:/usr/local/bin:g" | tee /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf >/dev/null; then
+    echo "Error: Failed to write to /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf"
+    exit 1
+  fi
 
-      if ! echo "$kubeadmConfig" | sed "s:/usr/bin:/usr/local/bin:g" | tee /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf > /dev/null; then
-      echo "Error: Failed to write to /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf"
-      exit 1
-      fi
+  if ! echo "$kubeletService" | sed "s:/usr/bin:/usr/local/bin:g" | tee /usr/lib/systemd/system/kubelet.service >/dev/null; then
+    echo "Error: Failed to write to /usr/lib/systemd/system/kubelet.service"
+    exit 1
+  fi
 
-      if ! echo "$kubeletService" | sed "s:/usr/bin:/usr/local/bin:g" | tee /usr/lib/systemd/system/kubelet.service > /dev/null; then
-      echo "Error: Failed to write to /usr/lib/systemd/system/kubelet.service"
-      exit 1
-      fi
+  if ! systemctl daemon-reload || ! systemctl enable --now kubelet; then
+    echo "Error: Failed to start kubelet service"
+    exit 1
+  fi
+}
 
-      if ! systemctl daemon-reload || ! systemctl enable --now kubelet; then
-      echo "Error: Failed to start kubelet service"
-      exit 1
-      fi
+function install_kubernetes_images() {
+  kubernetes_images_path="$RESOURCE/kubernetes-software/$CLUSTER_VERSION/kubernetes/${ARCH}/images/kubernetes-images.tar"
 }
 
 if systemctl is-active --quiet crio; then
@@ -155,5 +173,7 @@ if systemctl is-active --quiet kubelet; then
   echo "kubelet is already running, skipping installation."
 else
   echo "kubelet is not running, proceeding with installation."
-  install_kubernetes
+  install_kubernetes_software
 fi
+
+install_kubernetes_images

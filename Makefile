@@ -120,7 +120,8 @@ multi-platform-build-release:
 		docker run -it -d --rm --name $$container_name $$platform/$(IMG) ; \
 		docker cp $$container_name:/app.tar.gz ./built/$$container_name.tar.gz ; \
 		docker cp $$container_name:/app.tar.gz.sha256sum ./built/$$container_name.tar.gz.sha256sum ; \
-		docker rm -f $$container_name || (echo "Failed to remove container $$container_name" && exit 1); \
+		docker rm -f $$container_name; \
+		cd ./built && sha256sum $$container_name.tar.gz > $$container_name.sha256 && cd - ; \
 	done
 
 .PHONY: multi-platform-build-push
@@ -135,10 +136,10 @@ multi-platform-build-clean:
 	@for platform in $(PLATFORMS); do \
 		image_name=$$platform/$(IMG); \
 		echo "Cleaning for platform $$platform to image $$image_name"; \
-		docker rmi $$image_name ; \
-		docker buildx rm $(BUILDER_NAME); \
+		docker rmi $$image_name; \
 	done
-
+	docker buildx stop $(BUILDER_NAME); \
+	docker buildx rm $(BUILDER_NAME); \
 
 .PHONY: all
 # generate all

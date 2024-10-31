@@ -102,21 +102,21 @@ func (uc *CloudUsecase) InstallKubeadmKubeletCriO(ctx context.Context, cloud *Cl
 	return utils.NewBash(uc.log).RunCommandWithLogging("sudo bash", utils.MergePath(uc.c.Shell, KubernetesSowfwareShell), uc.c.Resource, cloud.ClusterVersion)
 }
 
-func (uc *CloudUsecase) KubeadmJoin(ctx context.Context, cloud *Cloud) error {
-	joinCommand := fmt.Sprintf("kubeadm join %s --token %s --discovery-token-ca-cert-hash %s", cloud.ControlPlaneEndpoint, cloud.Token, cloud.DiscoveryTokenCACertHash)
-	if cloud.JoinConfig != "" {
-		joinCommand = fmt.Sprintf("kubeadm join --config %s", cloud.JoinConfig)
-	}
-	err := utils.NewBash(uc.log).RunCommandWithLogging(joinCommand)
+func (uc *CloudUsecase) KubeadmInit(ctx context.Context, cloud *Cloud) error {
+	// need write to file
+	err := utils.NewBash(uc.log).RunCommandWithLogging(fmt.Sprintf("kubeadm init --config %s --upload-config %s", KubeadmInitConfig, KubeadmClusterConfig))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (uc *CloudUsecase) KubeadmInit(ctx context.Context, cloud *Cloud) error {
-	// need write to file
-	err := utils.NewBash(uc.log).RunCommandWithLogging(fmt.Sprintf("kubeadm init --config %s --upload-config %s", KubeadmInitConfig, KubeadmClusterConfig))
+func (uc *CloudUsecase) KubeadmJoin(ctx context.Context, cloud *Cloud) error {
+	joinCommand := fmt.Sprintf("kubeadm join %s --token %s --discovery-token-ca-cert-hash %s", cloud.ControlPlaneEndpoint, cloud.Token, cloud.DiscoveryTokenCACertHash)
+	if cloud.JoinConfig != "" {
+		joinCommand = fmt.Sprintf("kubeadm join --config %s", cloud.JoinConfig)
+	}
+	err := utils.NewBash(uc.log).RunCommandWithLogging(joinCommand)
 	if err != nil {
 		return err
 	}
