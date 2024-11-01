@@ -16,7 +16,6 @@ import (
 	"github.com/go-kratos/kratos/v2/transport/http"
 
 	_ "github.com/joho/godotenv/autoload"
-	_ "go.uber.org/automaxprocs"
 )
 
 // go build -ldflags "-X main.Version=x.y.z"

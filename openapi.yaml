@@ -6,120 +6,6 @@ info:
     title: ""
     version: 0.0.1
 paths:
-    /api/v1alpha1/cloud/install_kubeadm_kubelet_crio:
-        post:
-            tags:
-                - CloudInterface
-            description: InstallKubeadmKubeletCriO
-            operationId: CloudInterface_InstallKubeadmKubeletCriO
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/cloud.v1alpha1.Cloud'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/common.Msg'
-    /api/v1alpha1/cloud/kubeadm_init:
-        post:
-            tags:
-                - CloudInterface
-            description: KubeadmInit
-            operationId: CloudInterface_KubeadmInit
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/cloud.v1alpha1.Cloud'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/common.Msg'
-    /api/v1alpha1/cloud/kubeadm_join:
-        post:
-            tags:
-                - CloudInterface
-            description: KubeadmJoin
-            operationId: CloudInterface_KubeadmJoin
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/cloud.v1alpha1.Cloud'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/common.Msg'
-    /api/v1alpha1/cloud/kubeadm_reset:
-        post:
-            tags:
-                - CloudInterface
-            description: KubeadmReset
-            operationId: CloudInterface_KubeadmReset
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/cloud.v1alpha1.Cloud'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/common.Msg'
-    /api/v1alpha1/cloud/kubeadm_upgrade:
-        post:
-            tags:
-                - CloudInterface
-            description: KubeadmUpgrade
-            operationId: CloudInterface_KubeadmUpgrade
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/cloud.v1alpha1.Cloud'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/common.Msg'
-    /api/v1alpha1/cloud/node_init:
-        post:
-            tags:
-                - CloudInterface
-            description: node init
-            operationId: CloudInterface_NodeInit
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/cloud.v1alpha1.Cloud'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/common.Msg'
     /api/v1alpha1/cloud/ping:
         get:
             tags:
@@ -132,18 +18,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/common.Msg'
-    /api/v1alpha1/system:
-        get:
-            tags:
-                - SystemInterface
-            operationId: SystemInterface_GetSystem
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/system.v1alpha1.System'
     /api/v1alpha1/system/ping:
         get:
             tags:
@@ -158,25 +32,6 @@ paths:
                                 $ref: '#/components/schemas/common.Msg'
 components:
     schemas:
-        cloud.v1alpha1.Cloud:
-            type: object
-            properties:
-                id:
-                    type: string
-                nodeId:
-                    type: string
-                nodeName:
-                    type: string
-                clusterVersion:
-                    type: string
-                token:
-                    type: string
-                discoveryTokenCaCertHash:
-                    type: string
-                controlPlaneEndpoint:
-                    type: string
-                joinConfig:
-                    type: string
         common.Msg:
             type: object
             properties:
@@ -184,39 +39,6 @@ components:
                     type: integer
                     format: enum
                 Message:
-                    type: string
-        system.v1alpha1.System:
-            type: object
-            properties:
-                id:
-                    type: string
-                os:
-                    type: string
-                arch:
-                    type: string
-                cpu:
-                    type: integer
-                    format: int32
-                memory:
-                    type: integer
-                    format: int32
-                gpu:
-                    type: integer
-                    format: int32
-                gpuSpec:
-                    type: string
-                dataDisk:
-                    type: integer
-                    format: int32
-                kernel:
-                    type: string
-                container:
-                    type: string
-                kubelet:
-                    type: string
-                kubeProxy:
-                    type: string
-                internalIp:
                     type: string
 tags:
     - name: CloudInterface

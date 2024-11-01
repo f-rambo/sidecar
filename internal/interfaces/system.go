@@ -31,6 +31,10 @@ func NewSystemInterface(systemUc *biz.SystemUsecase, logger log.Logger, c *conf.
 	}
 }
 
+func (c *SystemInterface) Ping(ctx context.Context, _ *emptypb.Empty) (*common.Msg, error) {
+	return common.Response(), nil
+}
+
 func (c *SystemInterface) GetLogs(stream v1alpha1.SystemInterface_GetLogsServer) error {
 	i := 0
 	for {
@@ -150,30 +154,4 @@ func readNewLines(file *os.File) (string, error) {
 	}
 
 	return "", nil
-}
-
-func (c *SystemInterface) Ping(ctx context.Context, _ *emptypb.Empty) (*common.Msg, error) {
-	return common.Response(), nil
-}
-
-func (c *SystemInterface) GetSystem(ctx context.Context, _ *emptypb.Empty) (*v1alpha1.System, error) {
-	system, err := c.systemUc.GetSystem(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &v1alpha1.System{
-		Id:         system.ID,
-		Os:         system.OS,
-		Arch:       system.ARCH,
-		Cpu:        system.CPU,
-		Memory:     system.Memory,
-		Gpu:        system.GPU,
-		GpuSpec:    system.GpuSpec,
-		DataDisk:   system.DataDisk,
-		Kernel:     system.Kernel,
-		Container:  system.Container,
-		Kubelet:    system.Kubelet,
-		KubeProxy:  system.KubeProxy,
-		InternalIp: system.InternalIP,
-	}, nil
 }

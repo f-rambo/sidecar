@@ -18,7 +18,6 @@ import (
 
 import (
 	_ "github.com/joho/godotenv/autoload"
-	_ "go.uber.org/automaxprocs"
 )
 
 // Injectors from wire.go:

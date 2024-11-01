@@ -10,7 +10,6 @@ type Server struct {
 	Name     string     `json:"name,omitempty"`
 	Version  string     `json:"version,omitempty"`
 	Env      string     `json:"env,omitempty"`
-	Shell    string     `json:"shell,omitempty"`
 	Resource string     `json:"resource,omitempty"`
 	HTTP     HTTPServer `json:"http,omitempty"`
 	GRPC     GRPCServer `json:"grpc,omitempty"`
