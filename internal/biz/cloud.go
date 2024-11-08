@@ -8,26 +8,19 @@ package biz
 import "C"
 
 import (
-	"github.com/f-rambo/ship/internal/conf"
 	"github.com/go-kratos/kratos/v2/log"
 )
 
 type Cloud struct {
 }
 
-type CloudRepo interface{}
-
 type CloudUsecase struct {
-	cloudRepo CloudRepo
-	log       *log.Helper
-	c         *conf.Server
+	log *log.Helper
 }
 
-func NewCloudUseCase(conf *conf.Server, cloudRepo CloudRepo, logger log.Logger) *CloudUsecase {
+func NewCloudUseCase(logger log.Logger) *CloudUsecase {
 	c := &CloudUsecase{
-		cloudRepo: cloudRepo,
-		log:       log.NewHelper(logger),
-		c:         conf,
+		log: log.NewHelper(logger),
 	}
 	return c
 }

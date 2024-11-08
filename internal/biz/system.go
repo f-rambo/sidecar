@@ -14,18 +14,13 @@ import (
 type System struct {
 }
 
-type SystemRepo interface {
-}
-
 type SystemUsecase struct {
-	SystemRepo SystemRepo
-	log        *log.Helper
+	log *log.Helper
 }
 
-func NewSystemUseCase(systemRepo SystemRepo, logger log.Logger) *SystemUsecase {
+func NewSystemUseCase(logger log.Logger) *SystemUsecase {
 	s := &SystemUsecase{
-		SystemRepo: systemRepo,
-		log:        log.NewHelper(logger),
+		log: log.NewHelper(logger),
 	}
 	return s
 }

@@ -9,7 +9,6 @@ package main
 import (
 	"github.com/f-rambo/ship/internal/biz"
 	"github.com/f-rambo/ship/internal/conf"
-	"github.com/f-rambo/ship/internal/data"
 	"github.com/f-rambo/ship/internal/interfaces"
 	"github.com/f-rambo/ship/internal/server"
 	"github.com/go-kratos/kratos/v2"
@@ -24,20 +23,12 @@ import (
 
 // wireApp init kratos application.
 func wireApp(confServer *conf.Server, logger log.Logger) (*kratos.App, func(), error) {
-	dataData, cleanup, err := data.NewData(logger)
-	if err != nil {
-		return nil, nil, err
-	}
-	systemRepo := data.NewSystemRepo(dataData, logger)
-	systemUsecase := biz.NewSystemUseCase(systemRepo, logger)
+	systemUsecase := biz.NewSystemUseCase(logger)
 	systemInterface := interfaces.NewSystemInterface(systemUsecase, logger, confServer)
-	cloudRepo := data.NewCloudRepo(dataData, logger)
-	cloudUsecase := biz.NewCloudUseCase(confServer, cloudRepo, logger)
+	cloudUsecase := biz.NewCloudUseCase(logger)
 	cloudInterface := interfaces.NewCloudInterface(cloudUsecase, logger)
 	grpcServer := server.NewGRPCServer(confServer, systemInterface, cloudInterface, logger)
-	httpServer := server.NewHTTPServer(confServer, systemInterface, cloudInterface, logger)
-	app := newApp(logger, grpcServer, httpServer)
+	app := newApp(logger, grpcServer)
 	return app, func() {
-		cleanup()
 	}, nil
 }

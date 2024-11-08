@@ -2,7 +2,6 @@ server:
   debug: false
   name: "ship"
   version: 0.0.1
-  resource: "./resource"
   env: cluster
   http:
     network: "tcp"
