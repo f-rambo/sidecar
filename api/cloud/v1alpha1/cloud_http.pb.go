@@ -29,10 +29,10 @@ type CloudInterfaceHTTPServer interface {
 
 func RegisterCloudInterfaceHTTPServer(s *http.Server, srv CloudInterfaceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/api/v1alpha1/cloud/ping", _CloudInterface_Ping1_HTTP_Handler(srv))
+	r.GET("/api/v1alpha1/cloud/ping", _CloudInterface_Ping2_HTTP_Handler(srv))
 }
 
-func _CloudInterface_Ping1_HTTP_Handler(srv CloudInterfaceHTTPServer) func(ctx http.Context) error {
+func _CloudInterface_Ping2_HTTP_Handler(srv CloudInterfaceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in emptypb.Empty
 		if err := ctx.BindQuery(&in); err != nil {

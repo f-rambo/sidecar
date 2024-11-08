@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package cluster.v1alpha1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "api/common/error_reason.proto";
+import "api/cluster/v1alpha1/message.proto";
+
+option go_package = "api/cluster/v1alpha1;v1alpha1";
+
+service ClusterInterface {
+      rpc Ping(google.protobuf.Empty) returns (common.Msg) {
+            option (google.api.http) = {
+              get: "/api/v1alpha1/cluster/ping"
+            };
+      }
+
+      rpc Get(cluster.v1alpha1.ClusterArgs) returns (cluster.v1alpha1.Cluster) {
+            option (google.api.http) = {
+              get: "/api/v1alpha1/cluster"
+            };
+      }
+
+      rpc List(google.protobuf.Empty) returns (cluster.v1alpha1.ClusterList) {
+            option (google.api.http) = {
+              get: "/api/v1alpha1/cluster/list"
+            };
+      }
+
+      rpc GetRegions(cluster.v1alpha1.ClusterArgs) returns (cluster.v1alpha1.Regions) {
+            option (google.api.http) = {
+              get: "/api/v1alpha1/cluster/regions"
+            };
+      }
+
+}

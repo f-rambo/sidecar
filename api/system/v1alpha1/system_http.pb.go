@@ -29,10 +29,10 @@ type SystemInterfaceHTTPServer interface {
 
 func RegisterSystemInterfaceHTTPServer(s *http.Server, srv SystemInterfaceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/api/v1alpha1/system/ping", _SystemInterface_Ping0_HTTP_Handler(srv))
+	r.GET("/api/v1alpha1/system/ping", _SystemInterface_Ping1_HTTP_Handler(srv))
 }
 
-func _SystemInterface_Ping0_HTTP_Handler(srv SystemInterfaceHTTPServer) func(ctx http.Context) error {
+func _SystemInterface_Ping1_HTTP_Handler(srv SystemInterfaceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in emptypb.Empty
 		if err := ctx.BindQuery(&in); err != nil {
