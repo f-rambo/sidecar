@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/f-rambo/ship/internal/conf"
+	"github.com/f-rambo/cloud-copilot/sidecar/internal/conf"
 	"github.com/go-kratos/kratos/v2/log"
 	"gopkg.in/natefinch/lumberjack.v2"
 )

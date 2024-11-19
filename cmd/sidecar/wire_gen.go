@@ -7,10 +7,10 @@
 package main
 
 import (
-	"github.com/f-rambo/ship/internal/biz"
-	"github.com/f-rambo/ship/internal/conf"
-	"github.com/f-rambo/ship/internal/interfaces"
-	"github.com/f-rambo/ship/internal/server"
+	"github.com/f-rambo/cloud-copilot/sidecar/internal/biz"
+	"github.com/f-rambo/cloud-copilot/sidecar/internal/conf"
+	"github.com/f-rambo/cloud-copilot/sidecar/internal/interfaces"
+	"github.com/f-rambo/cloud-copilot/sidecar/internal/server"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 )
@@ -23,11 +23,9 @@ import (
 
 // wireApp init kratos application.
 func wireApp(confServer *conf.Server, logger log.Logger) (*kratos.App, func(), error) {
-	systemUsecase := biz.NewSystemUseCase(logger)
-	systemInterface := interfaces.NewSystemInterface(systemUsecase, logger, confServer)
-	cloudUsecase := biz.NewCloudUseCase(logger)
-	cloudInterface := interfaces.NewCloudInterface(cloudUsecase, logger)
-	grpcServer := server.NewGRPCServer(confServer, systemInterface, cloudInterface, logger)
+	clusterUsecase := biz.NewClusterUseCase(logger)
+	clusterInterface := interfaces.NewClusterInterface(clusterUsecase, logger)
+	grpcServer := server.NewGRPCServer(confServer, clusterInterface, logger)
 	app := newApp(logger, grpcServer)
 	return app, func() {
 	}, nil

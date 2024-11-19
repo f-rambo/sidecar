@@ -7,7 +7,7 @@ ENV GO111MODULE=on
 ENV GOPROXY=https://goproxy.cn
 ENV GOPRIVATE=github.com/f-rambo/
 
-RUN make build && mkdir -p /app && cp -r bin /app/ && cp -r configs /app/ && cp -r shell /app/
+RUN make build && mkdir -p /app && cp -r bin /app/ && cp -r configs /app/
 
 FROM debian:stable-slim
 
@@ -19,4 +19,4 @@ EXPOSE 8001
 EXPOSE 9001
 VOLUME /data/conf
 
-CMD ["./bin/ship", "-conf", "./configs/"]
+CMD ["./bin/sidecar", "-conf", "./configs/"]

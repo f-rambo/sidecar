@@ -1,7 +1,7 @@
 GOHOSTOS:=$(shell go env GOHOSTOS)
 GOPATH:=$(shell go env GOPATH)
 VERSION=v0.0.1
-SERVER_NAME=ship
+SERVER_NAME=sidecar
 AUTHOR=frambos
 IMG=$(AUTHOR)/$(SERVER_NAME):$(VERSION)
 BUILDER_NAME=$(SERVER_NAME)-multi-platform-buildx
@@ -42,7 +42,7 @@ api:
 
 .PHONY: build
 build:
-	mkdir -p bin/ && go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./cmd/ship
+	mkdir -p bin/ && go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./cmd/sidecar
 
 .PHONY: docker-build
 docker-build:
@@ -62,20 +62,20 @@ docker-push:
 
 .PHONY: docker-dev-build
 docker-dev-build:
-	docker build -f Dockerfile.dev -t ship-dev .
+	docker build -f Dockerfile.dev -t sidecar-dev .
 
 .PHONY: docker-dev
 docker-dev:
-	docker run -it -d --rm --name ship-dev -p 8001:8001 -p 9001:9001 -v ./:/go/src/ship ship-dev
+	docker run -it -d --rm --name sidecar-dev -p 8001:8001 -p 9001:9001 -v ./:/go/src/sidecar sidecar-dev
 
 .PHONY: run
 run:
-	go run ./cmd/ship -conf ./configs/
+	go run ./cmd/sidecar -conf ./configs/
 
 .PHONY: generate
 generate:
 	go mod tidy
-	@cd cmd/ship && wire && cd -
+	@cd cmd/sidecar && wire && cd -
 
 .PHONY: multi-platform-build
 multi-platform-build:

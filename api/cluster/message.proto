@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package cluster;
+
+option go_package = "api/cluster;";
+
+message Cluster {
+      string Name = 1;
+      string Version = 2;
+}

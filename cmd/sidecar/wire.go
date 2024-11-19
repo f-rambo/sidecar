@@ -6,10 +6,10 @@
 package main
 
 import (
-	"github.com/f-rambo/ship/internal/biz"
-	"github.com/f-rambo/ship/internal/conf"
-	"github.com/f-rambo/ship/internal/interfaces"
-	"github.com/f-rambo/ship/internal/server"
+	"github.com/f-rambo/cloud-copilot/sidecar/internal/biz"
+	"github.com/f-rambo/cloud-copilot/sidecar/internal/conf"
+	"github.com/f-rambo/cloud-copilot/sidecar/internal/interfaces"
+	"github.com/f-rambo/cloud-copilot/sidecar/internal/server"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"

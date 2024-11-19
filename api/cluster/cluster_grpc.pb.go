@@ -2,13 +2,13 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.27.1
-// source: api/cluster/v1alpha1/cluster.proto
+// source: api/cluster/cluster.proto
 
-package v1alpha1
+package cluster
 
 import (
 	context "context"
-	common "github.com/f-rambo/ship/api/common"
+	common "github.com/f-rambo/cloud-copilot/sidecar/api/common"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -21,10 +21,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ClusterInterface_Ping_FullMethodName       = "/cluster.v1alpha1.ClusterInterface/Ping"
-	ClusterInterface_Get_FullMethodName        = "/cluster.v1alpha1.ClusterInterface/Get"
-	ClusterInterface_List_FullMethodName       = "/cluster.v1alpha1.ClusterInterface/List"
-	ClusterInterface_GetRegions_FullMethodName = "/cluster.v1alpha1.ClusterInterface/GetRegions"
+	ClusterInterface_Ping_FullMethodName = "/cluster.ClusterInterface/Ping"
+	ClusterInterface_Info_FullMethodName = "/cluster.ClusterInterface/Info"
 )
 
 // ClusterInterfaceClient is the client API for ClusterInterface service.
@@ -32,9 +30,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ClusterInterfaceClient interface {
 	Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*common.Msg, error)
-	Get(ctx context.Context, in *ClusterArgs, opts ...grpc.CallOption) (*Cluster, error)
-	List(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ClusterList, error)
-	GetRegions(ctx context.Context, in *ClusterArgs, opts ...grpc.CallOption) (*Regions, error)
+	Info(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Cluster, error)
 }
 
 type clusterInterfaceClient struct {
@@ -55,30 +51,10 @@ func (c *clusterInterfaceClient) Ping(ctx context.Context, in *emptypb.Empty, op
 	return out, nil
 }
 
-func (c *clusterInterfaceClient) Get(ctx context.Context, in *ClusterArgs, opts ...grpc.CallOption) (*Cluster, error) {
+func (c *clusterInterfaceClient) Info(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Cluster, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Cluster)
-	err := c.cc.Invoke(ctx, ClusterInterface_Get_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *clusterInterfaceClient) List(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ClusterList, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ClusterList)
-	err := c.cc.Invoke(ctx, ClusterInterface_List_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *clusterInterfaceClient) GetRegions(ctx context.Context, in *ClusterArgs, opts ...grpc.CallOption) (*Regions, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Regions)
-	err := c.cc.Invoke(ctx, ClusterInterface_GetRegions_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, ClusterInterface_Info_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -90,9 +66,7 @@ func (c *clusterInterfaceClient) GetRegions(ctx context.Context, in *ClusterArgs
 // for forward compatibility.
 type ClusterInterfaceServer interface {
 	Ping(context.Context, *emptypb.Empty) (*common.Msg, error)
-	Get(context.Context, *ClusterArgs) (*Cluster, error)
-	List(context.Context, *emptypb.Empty) (*ClusterList, error)
-	GetRegions(context.Context, *ClusterArgs) (*Regions, error)
+	Info(context.Context, *emptypb.Empty) (*Cluster, error)
 	mustEmbedUnimplementedClusterInterfaceServer()
 }
 
@@ -106,14 +80,8 @@ type UnimplementedClusterInterfaceServer struct{}
 func (UnimplementedClusterInterfaceServer) Ping(context.Context, *emptypb.Empty) (*common.Msg, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
-func (UnimplementedClusterInterfaceServer) Get(context.Context, *ClusterArgs) (*Cluster, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
-}
-func (UnimplementedClusterInterfaceServer) List(context.Context, *emptypb.Empty) (*ClusterList, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
-}
-func (UnimplementedClusterInterfaceServer) GetRegions(context.Context, *ClusterArgs) (*Regions, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetRegions not implemented")
+func (UnimplementedClusterInterfaceServer) Info(context.Context, *emptypb.Empty) (*Cluster, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Info not implemented")
 }
 func (UnimplementedClusterInterfaceServer) mustEmbedUnimplementedClusterInterfaceServer() {}
 func (UnimplementedClusterInterfaceServer) testEmbeddedByValue()                          {}
@@ -154,56 +122,20 @@ func _ClusterInterface_Ping_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ClusterInterface_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ClusterArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ClusterInterfaceServer).Get(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ClusterInterface_Get_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClusterInterfaceServer).Get(ctx, req.(*ClusterArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ClusterInterface_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ClusterInterface_Info_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ClusterInterfaceServer).List(ctx, in)
+		return srv.(ClusterInterfaceServer).Info(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ClusterInterface_List_FullMethodName,
+		FullMethod: ClusterInterface_Info_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClusterInterfaceServer).List(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ClusterInterface_GetRegions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ClusterArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ClusterInterfaceServer).GetRegions(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ClusterInterface_GetRegions_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClusterInterfaceServer).GetRegions(ctx, req.(*ClusterArgs))
+		return srv.(ClusterInterfaceServer).Info(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -212,7 +144,7 @@ func _ClusterInterface_GetRegions_Handler(srv interface{}, ctx context.Context, 
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ClusterInterface_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "cluster.v1alpha1.ClusterInterface",
+	ServiceName: "cluster.ClusterInterface",
 	HandlerType: (*ClusterInterfaceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -220,18 +152,10 @@ var ClusterInterface_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ClusterInterface_Ping_Handler,
 		},
 		{
-			MethodName: "Get",
-			Handler:    _ClusterInterface_Get_Handler,
-		},
-		{
-			MethodName: "List",
-			Handler:    _ClusterInterface_List_Handler,
-		},
-		{
-			MethodName: "GetRegions",
-			Handler:    _ClusterInterface_GetRegions_Handler,
+			MethodName: "Info",
+			Handler:    _ClusterInterface_Info_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/cluster/v1alpha1/cluster.proto",
+	Metadata: "api/cluster/cluster.proto",
 }

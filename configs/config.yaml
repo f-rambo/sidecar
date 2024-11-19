@@ -1,6 +1,6 @@
 server:
   debug: false
-  name: "ship"
+  name: "sidecar"
   version: 0.0.1
   env: cluster
   http:

@@ -5,8 +5,8 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/f-rambo/ship/internal/conf"
-	"github.com/f-rambo/ship/utils"
+	"github.com/f-rambo/cloud-copilot/sidecar/internal/conf"
+	"github.com/f-rambo/cloud-copilot/sidecar/utils"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"

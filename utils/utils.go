@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	ShipStoreDirName = ".ship"
+	sidecarStoreDirName = ".sidecar"
 )
 
 func GetPackageStorePathByNames(packageNames ...string) (string, error) {
@@ -19,7 +19,7 @@ func GetPackageStorePathByNames(packageNames ...string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	packageNames = append([]string{home, ShipStoreDirName}, packageNames...)
+	packageNames = append([]string{home, sidecarStoreDirName}, packageNames...)
 	return filepath.Join(packageNames...), nil
 }
 

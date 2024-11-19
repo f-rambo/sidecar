@@ -3,7 +3,7 @@ package biz
 /*
 #cgo CFLAGS: -I../unix
 #cgo LDFLAGS:
-#include "cloud.c"
+#include "cluster.c"
 */
 import "C"
 
@@ -11,15 +11,15 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 )
 
-type Cloud struct {
+type Cluster struct {
 }
 
-type CloudUsecase struct {
+type ClusterUsecase struct {
 	log *log.Helper
 }
 
-func NewCloudUseCase(logger log.Logger) *CloudUsecase {
-	c := &CloudUsecase{
+func NewClusterUseCase(logger log.Logger) *ClusterUsecase {
+	c := &ClusterUsecase{
 		log: log.NewHelper(logger),
 	}
 	return c
