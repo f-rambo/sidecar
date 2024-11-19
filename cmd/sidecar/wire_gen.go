@@ -24,7 +24,7 @@ import (
 // wireApp init kratos application.
 func wireApp(confServer *conf.Server, logger log.Logger) (*kratos.App, func(), error) {
 	clusterUsecase := biz.NewClusterUseCase(logger)
-	clusterInterface := interfaces.NewClusterInterface(clusterUsecase, logger)
+	clusterInterface := interfaces.NewClusterInterface(clusterUsecase, confServer, logger)
 	grpcServer := server.NewGRPCServer(confServer, clusterInterface, logger)
 	app := newApp(logger, grpcServer)
 	return app, func() {

@@ -3,6 +3,7 @@ module github.com/f-rambo/cloud-copilot/sidecar
 go 1.22.3
 
 require (
+	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-kratos/kratos/v2 v2.8.0
 	github.com/google/wire v0.6.0
 	github.com/joho/godotenv v1.5.1
@@ -14,7 +15,6 @@ require (
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
-	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-kratos/aegis v0.2.0 // indirect
 	github.com/go-playground/form/v4 v4.2.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect

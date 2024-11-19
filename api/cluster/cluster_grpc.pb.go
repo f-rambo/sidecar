@@ -21,8 +21,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ClusterInterface_Ping_FullMethodName = "/cluster.ClusterInterface/Ping"
-	ClusterInterface_Info_FullMethodName = "/cluster.ClusterInterface/Info"
+	ClusterInterface_Ping_FullMethodName    = "/cluster.ClusterInterface/Ping"
+	ClusterInterface_GetLogs_FullMethodName = "/cluster.ClusterInterface/GetLogs"
+	ClusterInterface_Info_FullMethodName    = "/cluster.ClusterInterface/Info"
 )
 
 // ClusterInterfaceClient is the client API for ClusterInterface service.
@@ -30,6 +31,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ClusterInterfaceClient interface {
 	Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*common.Msg, error)
+	GetLogs(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[LogRequest, LogResponse], error)
 	Info(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Cluster, error)
 }
 
@@ -51,6 +53,19 @@ func (c *clusterInterfaceClient) Ping(ctx context.Context, in *emptypb.Empty, op
 	return out, nil
 }
 
+func (c *clusterInterfaceClient) GetLogs(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[LogRequest, LogResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &ClusterInterface_ServiceDesc.Streams[0], ClusterInterface_GetLogs_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[LogRequest, LogResponse]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ClusterInterface_GetLogsClient = grpc.BidiStreamingClient[LogRequest, LogResponse]
+
 func (c *clusterInterfaceClient) Info(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Cluster, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Cluster)
@@ -66,6 +81,7 @@ func (c *clusterInterfaceClient) Info(ctx context.Context, in *emptypb.Empty, op
 // for forward compatibility.
 type ClusterInterfaceServer interface {
 	Ping(context.Context, *emptypb.Empty) (*common.Msg, error)
+	GetLogs(grpc.BidiStreamingServer[LogRequest, LogResponse]) error
 	Info(context.Context, *emptypb.Empty) (*Cluster, error)
 	mustEmbedUnimplementedClusterInterfaceServer()
 }
@@ -79,6 +95,9 @@ type UnimplementedClusterInterfaceServer struct{}
 
 func (UnimplementedClusterInterfaceServer) Ping(context.Context, *emptypb.Empty) (*common.Msg, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
+}
+func (UnimplementedClusterInterfaceServer) GetLogs(grpc.BidiStreamingServer[LogRequest, LogResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method GetLogs not implemented")
 }
 func (UnimplementedClusterInterfaceServer) Info(context.Context, *emptypb.Empty) (*Cluster, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Info not implemented")
@@ -122,6 +141,13 @@ func _ClusterInterface_Ping_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ClusterInterface_GetLogs_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ClusterInterfaceServer).GetLogs(&grpc.GenericServerStream[LogRequest, LogResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ClusterInterface_GetLogsServer = grpc.BidiStreamingServer[LogRequest, LogResponse]
+
 func _ClusterInterface_Info_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -156,6 +182,13 @@ var ClusterInterface_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ClusterInterface_Info_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "GetLogs",
+			Handler:       _ClusterInterface_GetLogs_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "api/cluster/cluster.proto",
 }

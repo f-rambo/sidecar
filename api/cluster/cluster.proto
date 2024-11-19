@@ -12,5 +12,7 @@ option go_package = "api/cluster;";
 service ClusterInterface {
       rpc Ping(google.protobuf.Empty) returns (common.Msg);
 
+      rpc GetLogs(stream cluster.LogRequest) returns (stream cluster.LogResponse);
+
       rpc Info(google.protobuf.Empty) returns (cluster.Cluster);
 }
