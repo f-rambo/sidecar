@@ -10,8 +10,6 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-const logPackageName = "log"
-
 var _ log.Logger = (*logtool)(nil)
 
 type logtool struct {
@@ -63,7 +61,7 @@ func GetLogContenteKeyvals() []interface{} {
 }
 
 func GetLogFilePath(filename string) (string, error) {
-	logPath, err := GetPackageStorePathByNames(logPackageName)
+	logPath, err := GetServerStorePathByNames(LogPackage)
 	if err != nil {
 		return "", err
 	}
@@ -71,5 +69,5 @@ func GetLogFilePath(filename string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(logPath, fmt.Sprintf("%s.%s", filename, logPackageName)), nil
+	return filepath.Join(logPath, fmt.Sprintf("%s.log", filename)), nil
 }

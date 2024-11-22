@@ -4,22 +4,8 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 )
-
-const (
-	sidecarStoreDirName = ".sidecar"
-)
-
-func GetPackageStorePathByNames(packageNames ...string) (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	packageNames = append([]string{home, sidecarStoreDirName}, packageNames...)
-	return filepath.Join(packageNames...), nil
-}
 
 func IsFileExist(path string) bool {
 	_, err := os.Stat(path)

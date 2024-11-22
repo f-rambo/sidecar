@@ -36,7 +36,9 @@ func (c *ClusterInterface) Ping(ctx context.Context, _ *emptypb.Empty) (*common.
 }
 
 func (c *ClusterInterface) Info(ctx context.Context, _ *emptypb.Empty) (*clusterApi.Cluster, error) {
-	return &clusterApi.Cluster{}, nil
+	return &clusterApi.Cluster{
+		Name: c.c.Name,
+	}, nil
 }
 
 func (c *ClusterInterface) GetLogs(stream clusterApi.ClusterInterface_GetLogsServer) error {

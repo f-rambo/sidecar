@@ -70,7 +70,7 @@ docker-dev:
 
 .PHONY: run
 run:
-	go run ./cmd/sidecar -conf ./configs/
+	go run ./cmd/sidecar -conf ./configs/config.yaml
 
 .PHONY: generate
 generate:

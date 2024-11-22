@@ -9,15 +9,7 @@ type Server struct {
 	Debug   bool       `json:"debug,omitempty"`
 	Name    string     `json:"name,omitempty"`
 	Version string     `json:"version,omitempty"`
-	Env     string     `json:"env,omitempty"`
-	HTTP    HTTPServer `json:"http,omitempty"`
 	GRPC    GRPCServer `json:"grpc,omitempty"`
-}
-
-type HTTPServer struct {
-	Network string `json:"network,omitempty"`
-	Addr    string `json:"addr,omitempty"`
-	Timeout int32  `json:"timeout,omitempty"`
 }
 
 type GRPCServer struct {

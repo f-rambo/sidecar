@@ -69,6 +69,18 @@ func main() {
 		panic(err)
 	}
 
+	Name = bc.Server.Name
+	Version = bc.Server.Version
+
+	if Name == "" || Version == "" {
+		panic("name or version is empty")
+	}
+
+	utils.ServerNameAsStoreDirName = Name
+	if err := utils.InitServerStore(); err != nil {
+		panic(err)
+	}
+
 	utilLogger, err := utils.NewLog(&bc)
 	if err != nil {
 		panic(err)
