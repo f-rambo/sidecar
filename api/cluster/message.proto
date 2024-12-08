@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package cluster;
+package sidecar.api.cluster;
 
 option go_package = "api/cluster;";
 

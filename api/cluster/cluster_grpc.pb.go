@@ -21,9 +21,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ClusterInterface_Ping_FullMethodName    = "/cluster.ClusterInterface/Ping"
-	ClusterInterface_GetLogs_FullMethodName = "/cluster.ClusterInterface/GetLogs"
-	ClusterInterface_Info_FullMethodName    = "/cluster.ClusterInterface/Info"
+	ClusterInterface_Ping_FullMethodName    = "/sidecar.api.cluster.ClusterInterface/Ping"
+	ClusterInterface_GetLogs_FullMethodName = "/sidecar.api.cluster.ClusterInterface/GetLogs"
+	ClusterInterface_Info_FullMethodName    = "/sidecar.api.cluster.ClusterInterface/Info"
 )
 
 // ClusterInterfaceClient is the client API for ClusterInterface service.
@@ -170,7 +170,7 @@ func _ClusterInterface_Info_Handler(srv interface{}, ctx context.Context, dec fu
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ClusterInterface_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "cluster.ClusterInterface",
+	ServiceName: "sidecar.api.cluster.ClusterInterface",
 	HandlerType: (*ClusterInterfaceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
