@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"os"
+	"path/filepath"
 	"runtime"
 
 	"github.com/f-rambo/cloud-copilot/sidecar/internal/conf"
@@ -39,12 +40,13 @@ func newApp(logger log.Logger, gs *grpc.Server) *kratos.App {
 		kratos.Name(Name),
 		kratos.Version(Version),
 		kratos.Metadata(map[string]string{
-			"service": Name,
-			"version": Version,
-			"runtime": runtime.Version(),
-			"os":      runtime.GOOS,
-			"arch":    runtime.GOARCH,
-			"conf":    flagconf,
+			utils.ServiceNameKey.String():    Name,
+			utils.ServiceVersionKey.String(): Version,
+			utils.RuntimeKey.String():        runtime.Version(),
+			utils.OSKey.String():             runtime.GOOS,
+			utils.ArchKey.String():           runtime.GOARCH,
+			utils.ConfKey.String():           flagconf,
+			utils.ConfDirKey.String():        filepath.Dir(flagconf),
 		}),
 		kratos.Logger(logger),
 		kratos.Server(gs),
@@ -74,11 +76,6 @@ func main() {
 
 	if Name == "" || Version == "" {
 		panic("name or version is empty")
-	}
-
-	utils.ServerNameAsStoreDirName = Name
-	if err := utils.InitServerStore(); err != nil {
-		panic(err)
 	}
 
 	utilLogger, err := utils.NewLog(&bc)

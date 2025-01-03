@@ -4,8 +4,16 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 )
+
+func GetServerStoragePathByNames(packageNames ...string) string {
+	if len(packageNames) == 0 {
+		return ""
+	}
+	return filepath.Join(packageNames...)
+}
 
 func IsFileExist(path string) bool {
 	_, err := os.Stat(path)

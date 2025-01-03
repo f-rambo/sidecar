@@ -19,4 +19,4 @@ EXPOSE 8001
 EXPOSE 9001
 VOLUME /data/conf
 
-CMD ["./bin/sidecar", "-conf", "./configs/"]
+CMD ["./bin/sidecar", "-conf", "./configs/config.yaml"]

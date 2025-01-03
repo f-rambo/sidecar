@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/f-rambo/cloud-copilot/sidecar/internal/conf"
@@ -25,12 +23,8 @@ func NewLog(conf *conf.Bootstrap) (*logtool, error) {
 			logger: log.DefaultLogger,
 		}, nil
 	}
-	logFilePath, err := GetLogFilePath(conf.Server.Name)
-	if err != nil {
-		return nil, err
-	}
 	lumberjackLogger := &lumberjack.Logger{
-		Filename:   logFilePath,
+		Filename:   GetLogFilePath(),
 		MaxSize:    int(logConf.MaxSize),
 		MaxBackups: int(logConf.MaxBackups),
 		MaxAge:     int(logConf.MaxAge),
@@ -60,14 +54,6 @@ func GetLogContenteKeyvals() []interface{} {
 	}
 }
 
-func GetLogFilePath(filename string) (string, error) {
-	logPath, err := GetServerStorePathByNames(LogPackage)
-	if err != nil {
-		return "", err
-	}
-	err = os.MkdirAll(logPath, 0755)
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(logPath, fmt.Sprintf("%s.log", filename)), nil
+func GetLogFilePath() string {
+	return filepath.Join(GetServerStoragePathByNames("log"), "log.log")
 }
